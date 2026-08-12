@@ -1,4 +1,4 @@
-<% layout("./layout") %>
+<% layout("../../../shared/views/layout") %>
 <main class="wrap">
   <h1>업무 시스템</h1>
   <p class="muted">

@@ -1,0 +1,66 @@
+<table id="user-table" class="tbl" <% if (it.oob) { %>hx-swap-oob="true"<% } %>>
+  <thead>
+    <tr>
+      <th>아이디</th>
+      <th>이름</th>
+      <th>이메일</th>
+      <th>출처</th>
+      <th>상태</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (it.users.length === 0) { %>
+    <tr>
+      <td colspan="6" class="muted center">
+        <% if (it.q) { %>"<%= it.q %>"에 해당하는 사용자가 없다.<% } else { %>사용자가 없다.<% } %>
+      </td>
+    </tr>
+    <% } %>
+
+    <% it.users.forEach(function (u) { %>
+    <tr class="<%= u.enabled ? '' : 'off' %>">
+      <td><code><%= u.username %></code></td>
+      <td><%= [u.lastName, u.firstName].filter(Boolean).join(' ') || '—' %></td>
+      <td class="url"><%= u.email || '—' %></td>
+      <td>
+        <% if (u.federationLink) { %>
+        <span class="tag">외부(AD/LDAP)</span>
+        <% } else { %>
+        <span class="muted">Keycloak</span>
+        <% } %>
+      </td>
+      <td><%= u.enabled ? '사용' : '중지' %></td>
+      <td class="actions">
+        <a class="btn sm" href="/admin/users/<%= encodeURIComponent(u.id) %>">관리</a>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+
+  <% if (it.pageCount > 1) { %>
+  <tfoot>
+    <tr>
+      <td colspan="6" class="pager">
+        <% if (it.page > 1) { %>
+        <button
+          class="btn sm"
+          hx-get="/admin/users/table?page=<%= it.page - 1 %>&q=<%= encodeURIComponent(it.q) %>"
+          hx-target="#user-table"
+          hx-swap="outerHTML"
+        >← 이전</button>
+        <% } %>
+        <span class="muted"><%= it.page %> / <%= it.pageCount %> · 전체 <%= it.total %>명</span>
+        <% if (it.page < it.pageCount) { %>
+        <button
+          class="btn sm"
+          hx-get="/admin/users/table?page=<%= it.page + 1 %>&q=<%= encodeURIComponent(it.q) %>"
+          hx-target="#user-table"
+          hx-swap="outerHTML"
+        >다음 →</button>
+        <% } %>
+      </td>
+    </tr>
+  </tfoot>
+  <% } %>
+</table>

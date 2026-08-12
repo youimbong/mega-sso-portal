@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
-import { env, isProd } from './env.js'
-import { loadSession, SESSION_COOKIE, SESSION_TTL_MS, type CurrentUser } from './session.js'
+import { env, isProd } from '../../shared/env.js'
+import { loadSession, SESSION_COOKIE, SESSION_TTL_MS, type CurrentUser } from './service.js'
 
 export const PORTAL_ADMIN_ROLE = 'portal-admin'
 
@@ -67,7 +67,7 @@ export async function requireAdmin(request: FastifyRequest, reply: FastifyReply)
   }
 
   if (!isAdmin(request.user)) {
-    return reply.code(403).view('error', {
+    return reply.code(403).view('shared/views/error', {
       user: request.user,
       title: '접근 권한이 없다',
       message: `이 화면은 ${PORTAL_ADMIN_ROLE} 역할이 필요하다. 관리자에게 요청하라.`,

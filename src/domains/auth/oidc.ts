@@ -1,6 +1,6 @@
 import * as client from 'openid-client'
 
-import { env, issuerIsInsecure } from './env.js'
+import { env, issuerIsInsecure } from '../../shared/env.js'
 
 let configPromise: Promise<client.Configuration> | undefined
 

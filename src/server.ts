@@ -8,16 +8,21 @@ import view from '@fastify/view'
 import { Eta } from 'eta'
 import Fastify from 'fastify'
 
-import { registerAuth, registerOriginCheck } from './auth.js'
-import { closeDb } from './db/index.js'
-import { env, isProd } from './env.js'
-import { adminRoutes } from './routes/admin.js'
-import { authRoutes } from './routes/auth.js'
-import { portalRoutes } from './routes/portal.js'
-import { purgeExpiredSessions } from './session.js'
+import { appsRoutes } from './domains/apps/index.js'
+import {
+  authRoutes,
+  purgeExpiredSessions,
+  registerAuth,
+  registerOriginCheck,
+} from './domains/auth/index.js'
+import { portalRoutes } from './domains/portal/index.js'
+import { usersRoutes } from './domains/users/index.js'
+import { closeDb } from './shared/db.js'
+import { env, isProd } from './shared/env.js'
 
+// .eta는 tsc가 컴파일하지 않으므로 dist에서도 src/ 안의 템플릿을 그대로 읽는다.
 // src/ 와 dist/ 모두 프로젝트 루트 바로 아래이므로 두 경우 모두 같은 경로가 나온다.
-const viewsDir = fileURLToPath(new URL('../views', import.meta.url))
+const viewsDir = fileURLToPath(new URL('../src', import.meta.url))
 const publicDir = fileURLToPath(new URL('../public', import.meta.url))
 
 const SESSION_PURGE_INTERVAL_MS = 60 * 60 * 1000
@@ -68,10 +73,11 @@ export async function buildServer() {
 
   await app.register(authRoutes)
   await app.register(portalRoutes)
-  await app.register(adminRoutes)
+  await app.register(appsRoutes)
+  await app.register(usersRoutes)
 
   app.setNotFoundHandler(async (request, reply) =>
-    reply.code(404).view('error', {
+    reply.code(404).view('shared/views/error', {
       user: request.user,
       title: '페이지를 찾을 수 없다',
       message: '주소를 확인하라.',

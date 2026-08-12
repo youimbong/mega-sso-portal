@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto'
 
 import { and, eq, gt, lt } from 'drizzle-orm'
 
-import { db } from './db/index.js'
-import { sessions } from './db/schema.js'
+import { db } from '../../shared/db.js'
+import { sessions } from './schema.js'
 
 /** 포털 세션 수명. Keycloak realm의 ssoSessionMaxLifespan(10시간)에 맞춘다. */
 export const SESSION_TTL_MS = 10 * 60 * 60 * 1000

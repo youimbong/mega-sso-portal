@@ -2,9 +2,9 @@ import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type { FastifyInstance } from 'fastify'
 import * as client from 'openid-client'
 
-import { sessionCookieOptions } from '../auth.js'
-import { env } from '../env.js'
-import { getOidcConfig, readClaims, REDIRECT_URI, rolesOf } from '../oidc.js'
+import { env } from '../../shared/env.js'
+import { sessionCookieOptions } from './guard.js'
+import { getOidcConfig, readClaims, REDIRECT_URI, rolesOf } from './oidc.js'
 import {
   createSession,
   deleteSession,
@@ -12,10 +12,16 @@ import {
   deleteSessionsByUserSub,
   FLOW_COOKIE,
   SESSION_COOKIE,
-} from '../session.js'
-import { safeReturnTo } from '../url-safety.js'
+} from './service.js'
+import { safeReturnTo } from './url-safety.js'
 
 const BACKCHANNEL_EVENT = 'http://schemas.openid.net/event/backchannel-logout'
+
+const LOGIN_ERRORS: Record<string, string> = {
+  'flow-expired': '로그인 요청이 만료되었다. 다시 시도하라.',
+  'no-id-token': 'Keycloak이 ID token을 돌려주지 않았다. 클라이언트 스코프 설정을 확인하라.',
+  'exchange-failed': '인가 코드 교환에 실패했다. 서버 로그를 확인하라.',
+}
 
 /** 인가 요청 ~ 콜백 사이에만 존재하는 값. 서명된 쿠키에 담는다. */
 type FlowState = { v: string; s: string; n: string; r: string }
@@ -41,6 +47,15 @@ async function getJwks() {
 }
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
+  app.get('/login-error', async (request, reply) => {
+    const reason = (request.query as Record<string, unknown>).reason
+    const message =
+      (typeof reason === 'string' ? LOGIN_ERRORS[reason] : undefined) ??
+      '알 수 없는 오류가 발생했다.'
+
+    return reply.code(400).view('domains/auth/views/login-error', { message })
+  })
+
   app.get('/api/auth/login', async (request, reply) => {
     const config = await getOidcConfig()
 

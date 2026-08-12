@@ -12,7 +12,10 @@
     <header class="topbar">
       <a class="brand" href="/">Mega <span>Portal</span></a>
       <nav>
-        <% if (it.user.roles.includes('portal-admin')) { %><a href="/admin/apps">앱 관리</a><% } %>
+        <% if (it.user.roles.includes('portal-admin')) { %>
+        <a href="/admin/apps">앱 관리</a>
+        <a href="/admin/users">사용자</a>
+        <% } %>
       </nav>
       <span class="who"><%= it.user.name || it.user.email || it.user.sub %></span>
       <%/* GET 로그아웃은 CSRF에 취약하므로 form POST로 보낸다. */%>

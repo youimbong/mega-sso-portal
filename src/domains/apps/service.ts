@@ -1,7 +1,7 @@
 import { asc, eq } from 'drizzle-orm'
 
-import { db } from './db/index.js'
-import { appRoles, apps, type App } from './db/schema.js'
+import { db } from '../../shared/db.js'
+import { appRoles, apps, type App } from './schema.js'
 import { canSee } from './visibility.js'
 
 export type AppWithRoles = App & { roles: string[] }

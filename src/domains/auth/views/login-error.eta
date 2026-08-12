@@ -1,4 +1,4 @@
-<% layout("./layout") %>
+<% layout("../../../shared/views/layout") %>
 <main class="wrap center">
   <h1>로그인하지 못했다</h1>
   <p class="muted"><%= it.message %></p>

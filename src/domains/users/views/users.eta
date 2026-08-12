@@ -1,0 +1,27 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <h1>사용자</h1>
+  <p class="muted">
+    Keycloak의 계정을 여기서 관리한다. 관리 콘솔에 들어갈 필요 없다.
+  </p>
+
+  <%~ include("./user-form", { errors: it.errors, values: it.values }) %>
+
+  <div class="searchbar">
+    <input
+      type="search"
+      name="q"
+      value="<%= it.q %>"
+      placeholder="아이디 · 이름 · 이메일 검색"
+      hx-get="/admin/users/table"
+      hx-trigger="input changed delay:300ms, search"
+      hx-target="#user-table"
+      hx-swap="outerHTML"
+    />
+  </div>
+
+  <%~ include("./user-table", {
+    users: it.users, total: it.total, page: it.page,
+    pageCount: it.pageCount, q: it.q, oob: false
+  }) %>
+</main>

@@ -1,0 +1,125 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <p class="crumb"><a href="/admin/users">← 사용자 목록</a></p>
+
+  <h1>
+    <%= it.target.username %>
+    <% if (!it.target.enabled) { %><span class="tag off">중지됨</span><% } %>
+    <% if (it.federated) { %><span class="tag">외부(AD/LDAP)</span><% } %>
+    <% if (it.isSelf) { %><span class="tag">본인</span><% } %>
+  </h1>
+  <p class="muted">
+    <%= [it.target.lastName, it.target.firstName].filter(Boolean).join(' ') || '이름 없음' %>
+    · <%= it.target.email || '이메일 없음' %>
+  </p>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <% if (it.notice) { %>
+  <p class="notice">
+    <% if (it.notice === 'roles-saved') { %>역할을 저장했다. 대상자가 다시 로그인해야 반영된다.
+    <% } else if (it.notice === 'password-reset') { %>비밀번호를 재설정했다.
+    <% } else if (it.notice === 'toggled') { %>계정 상태를 변경했다.
+    <% } else if (it.notice === 'logged-out') { %>모든 세션을 끊었다.
+    <% } else { %>처리했다.<% } %>
+  </p>
+  <% } %>
+
+  <%/* --- 역할 --- */%>
+  <section class="panel">
+    <h2>역할</h2>
+    <p class="muted">
+      역할은 포털 앱의 노출 범위를 결정한다. 앱 카탈로그의 <b>노출 역할</b>과 이름이 맞아야 한다.
+    </p>
+
+    <form method="post" action="/admin/users/<%= encodeURIComponent(it.target.id) %>/roles">
+      <ul class="rolelist">
+        <% it.assignable.forEach(function (role) { %>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              name="roles"
+              value="<%= role.name %>"
+              <%= it.assigned.includes(role.name) ? 'checked' : '' %>
+            />
+            <code><%= role.name %></code>
+            <% if (role.description) { %><span class="muted"><%= role.description %></span><% } %>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+      <button class="btn primary" type="submit">역할 저장</button>
+    </form>
+  </section>
+
+  <%/* --- 비밀번호 --- */%>
+  <section class="panel">
+    <h2>비밀번호 재설정</h2>
+    <% if (it.federated) { %>
+    <p class="muted">외부 저장소(AD/LDAP)가 소유한 계정이다. 비밀번호는 그쪽에서 바꿔야 한다.</p>
+    <% } else { %>
+    <form
+      method="post"
+      action="/admin/users/<%= encodeURIComponent(it.target.id) %>/password"
+      class="form-grid"
+    >
+      <label>
+        새 비밀번호
+        <input name="password" type="password" required minlength="8" />
+      </label>
+      <label class="checkbox">
+        <span>
+          <input type="checkbox" name="temporary" value="true" checked />
+          다음 로그인 시 변경 요구
+        </span>
+      </label>
+      <div class="span2">
+        <button class="btn" type="submit">재설정</button>
+      </div>
+    </form>
+    <% } %>
+  </section>
+
+  <%/* --- 세션 / 계정 상태 --- */%>
+  <section class="panel">
+    <h2>세션과 계정 상태</h2>
+    <div class="btnrow">
+      <form method="post" action="/admin/users/<%= encodeURIComponent(it.target.id) %>/logout">
+        <button class="btn" type="submit">모든 세션 강제 종료</button>
+      </form>
+
+      <% if (!it.isSelf) { %>
+      <form method="post" action="/admin/users/<%= encodeURIComponent(it.target.id) %>/toggle">
+        <button class="btn" type="submit">
+          <%= it.target.enabled ? '계정 비활성화' : '계정 활성화' %>
+        </button>
+      </form>
+      <% } %>
+    </div>
+    <small class="muted">
+      비활성화하면 로그인 중이던 세션도 함께 끊는다. 강제 종료는 Keycloak SSO 세션을 끊고,
+      back-channel logout으로 포털 세션도 즉시 사라진다.
+    </small>
+  </section>
+
+  <%/* --- 삭제 --- */%>
+  <% if (!it.isSelf && !it.federated) { %>
+  <section class="panel danger-zone">
+    <h2>삭제</h2>
+    <p class="muted">되돌릴 수 없다. 보통은 삭제 대신 비활성화를 쓴다.</p>
+    <%/* 인라인 onsubmit은 CSP(script-src 'self')에 막힌다. htmx의 hx-confirm을 쓴다. */%>
+    <button
+      class="btn danger"
+      hx-post="/admin/users/<%= encodeURIComponent(it.target.id) %>/delete"
+      hx-confirm="<%= it.target.username %> 계정을 삭제할까? 되돌릴 수 없다."
+    >
+      사용자 삭제
+    </button>
+  </section>
+  <% } %>
+</main>

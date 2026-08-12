@@ -1,0 +1,49 @@
+<section id="user-form-wrap" class="panel">
+  <h2>새 사용자</h2>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <form hx-post="/admin/users" hx-target="#user-form-wrap" hx-swap="outerHTML" class="form-grid">
+    <label>
+      아이디
+      <input name="username" required placeholder="hong.gd" value="<%= it.values.username || '' %>" />
+    </label>
+
+    <label>
+      이메일
+      <input name="email" type="email" placeholder="hong@megastudy.net" value="<%= it.values.email || '' %>" />
+    </label>
+
+    <label>
+      성
+      <input name="lastName" placeholder="홍" value="<%= it.values.lastName || '' %>" />
+    </label>
+
+    <label>
+      이름
+      <input name="firstName" placeholder="길동" value="<%= it.values.firstName || '' %>" />
+    </label>
+
+    <label>
+      초기 비밀번호
+      <input name="password" type="password" required minlength="8" />
+      <small>8자 이상</small>
+    </label>
+
+    <label class="checkbox">
+      <span>
+        <input type="checkbox" name="temporary" value="true" checked />
+        첫 로그인 시 변경 요구
+      </span>
+      <small>끄면 지정한 비밀번호를 그대로 쓴다.</small>
+    </label>
+
+    <div class="span2">
+      <button class="btn primary" type="submit">등록</button>
+    </div>
+  </form>
+</section>
