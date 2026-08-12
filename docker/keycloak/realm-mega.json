@@ -66,6 +66,14 @@
   ],
   "users": [
     {
+      "username": "service-account-portal",
+      "enabled": true,
+      "serviceAccountClientId": "portal",
+      "clientRoles": {
+        "realm-management": ["query-users", "view-users", "view-realm", "manage-users"]
+      }
+    },
+    {
       "username": "admin.portal",
       "email": "admin.portal@mega.local",
       "firstName": "Portal",
