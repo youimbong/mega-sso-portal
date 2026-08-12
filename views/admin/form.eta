@@ -1,0 +1,71 @@
+<%/* htmx가 이 조각 전체를 교체한다. id가 스왑 대상이다. */%>
+<section id="form-wrap" class="panel">
+  <h2>새 앱 등록</h2>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <form
+    hx-post="/admin/apps"
+    hx-target="#form-wrap"
+    hx-swap="outerHTML"
+    class="form-grid"
+  >
+    <label>
+      slug
+      <input name="slug" required placeholder="groupware" value="<%= it.values.slug || '' %>" />
+    </label>
+
+    <label>
+      이름
+      <input name="name" required placeholder="그룹웨어" value="<%= it.values.name || '' %>" />
+    </label>
+
+    <label class="span2">
+      주소
+      <input
+        name="targetUrl"
+        type="url"
+        required
+        placeholder="https://gw.example.co.kr"
+        value="<%= it.values.targetUrl || '' %>"
+      />
+    </label>
+
+    <label class="span2">
+      설명
+      <input name="description" placeholder="선택" value="<%= it.values.description || '' %>" />
+    </label>
+
+    <label>
+      여는 방식
+      <select name="mode">
+        <option value="link" <%= it.values.mode === 'iframe' ? '' : 'selected' %>>
+          새 탭 (link)
+        </option>
+        <option value="iframe" <%= it.values.mode === 'iframe' ? 'selected' : '' %>>
+          포털 안에 embed (iframe)
+        </option>
+      </select>
+      <small>대상 앱이 X-Frame-Options로 embed를 막으면 iframe은 빈 화면이 된다.</small>
+    </label>
+
+    <label>
+      정렬 순서
+      <input name="sortOrder" type="number" min="0" value="<%= it.values.sortOrder || 0 %>" />
+    </label>
+
+    <label class="span2">
+      노출 역할
+      <input name="roles" placeholder="예: hr-team, portal-admin" value="<%= it.values.roles || '' %>" />
+      <small>Keycloak realm role을 쉼표로 구분한다. 비우면 로그인한 모두에게 보인다.</small>
+    </label>
+
+    <div class="span2">
+      <button class="btn primary" type="submit">등록</button>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,6 @@
+<% layout("./layout") %>
+<main class="wrap center">
+  <h1><%= it.title %></h1>
+  <p class="muted"><%= it.message %></p>
+  <a class="btn primary" href="/">포털로 돌아가기</a>
+</main>

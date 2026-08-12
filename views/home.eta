@@ -1,0 +1,30 @@
+<% layout("./layout") %>
+<main class="wrap">
+  <h1>업무 시스템</h1>
+  <p class="muted">
+    <%= it.user.name || it.user.email %>님에게 허용된 <%= it.apps.length %>개
+  </p>
+
+  <% if (it.apps.length === 0) { %>
+  <div class="empty">표시할 앱이 없다. 관리자에게 권한을 요청하라.</div>
+  <% } else { %>
+  <ul class="grid">
+    <% it.apps.forEach(function (app) { %>
+    <li>
+      <%/* iframe 모드는 포털 안에서, link 모드는 새 탭에서 연다. */%>
+      <% if (app.mode === 'iframe') { %>
+      <a class="card" href="/apps/<%= app.slug %>">
+        <span class="card-title"><%= app.name %></span>
+        <% if (app.description) { %><span class="card-desc"><%= app.description %></span><% } %>
+      </a>
+      <% } else { %>
+      <a class="card" href="<%= app.targetUrl %>" target="_blank" rel="noreferrer noopener">
+        <span class="card-title"><%= app.name %> <span class="ext">↗</span></span>
+        <% if (app.description) { %><span class="card-desc"><%= app.description %></span><% } %>
+      </a>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</main>

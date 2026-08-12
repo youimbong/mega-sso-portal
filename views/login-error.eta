@@ -1,0 +1,6 @@
+<% layout("./layout") %>
+<main class="wrap center">
+  <h1>로그인하지 못했다</h1>
+  <p class="muted"><%= it.message %></p>
+  <a class="btn primary" href="/api/auth/login">다시 로그인</a>
+</main>

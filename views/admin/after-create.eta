@@ -1,0 +1,3 @@
+<%/* 등록 성공: 폼은 비워서 교체하고, 목록은 out-of-band로 함께 갱신한다. */%>
+<%~ include("./form", { errors: [], values: {} }) %>
+<%~ include("./table", { apps: it.apps, oob: true }) %>

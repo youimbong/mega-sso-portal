@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= it.app.name %> · <%= it.appName %></title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="embed-body">
+    <div class="embed-bar">
+      <a href="/">← 포털</a>
+      <strong><%= it.app.name %></strong>
+      <a class="right" href="<%= it.app.targetUrl %>" target="_blank" rel="noreferrer noopener">
+        새 창으로 열기 ↗
+      </a>
+    </div>
+
+    <%/*
+      대상 앱이 X-Frame-Options: DENY 나 CSP frame-ancestors 로 embed를 막으면
+      이 iframe은 빈 화면이 된다. 그때는 관리 화면에서 link 모드로 바꿔야 한다.
+    */%>
+    <iframe
+      class="embed-frame"
+      src="<%= it.app.targetUrl %>"
+      title="<%= it.app.name %>"
+      referrerpolicy="strict-origin-when-cross-origin"
+      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads"
+    ></iframe>
+  </body>
+</html>

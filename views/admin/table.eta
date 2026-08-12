@@ -1,0 +1,51 @@
+<%/* oob=true 면 htmx의 out-of-band swap으로 폼 응답에 얹혀 함께 갱신된다. */%>
+<table id="app-table" class="tbl" <% if (it.oob) { %>hx-swap-oob="true"<% } %>>
+  <thead>
+    <tr>
+      <th>이름</th>
+      <th>slug</th>
+      <th>주소</th>
+      <th>방식</th>
+      <th>노출 역할</th>
+      <th>상태</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (it.apps.length === 0) { %>
+    <tr>
+      <td colspan="7" class="muted center">등록된 앱이 없다.</td>
+    </tr>
+    <% } %>
+
+    <% it.apps.forEach(function (app) { %>
+    <tr class="<%= app.enabled ? '' : 'off' %>">
+      <td><%= app.name %></td>
+      <td><code><%= app.slug %></code></td>
+      <td class="url"><%= app.targetUrl %></td>
+      <td><%= app.mode %></td>
+      <td><%= app.roles.length ? app.roles.join(', ') : '전체' %></td>
+      <td><%= app.enabled ? '사용' : '중지' %></td>
+      <td class="actions">
+        <button
+          class="btn sm"
+          hx-post="/admin/apps/<%= app.id %>/toggle"
+          hx-target="#app-table"
+          hx-swap="outerHTML"
+        >
+          <%= app.enabled ? '중지' : '사용' %>
+        </button>
+        <button
+          class="btn sm danger"
+          hx-post="/admin/apps/<%= app.id %>/delete"
+          hx-target="#app-table"
+          hx-swap="outerHTML"
+          hx-confirm="<%= app.name %> 앱을 삭제할까?"
+        >
+          삭제
+        </button>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>

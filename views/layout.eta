@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= it.title ? it.title + ' · ' : '' %><%= it.appName %></title>
+    <link rel="stylesheet" href="/static/app.css" />
+    <script src="/static/htmx.min.js" defer></script>
+  </head>
+  <body class="<%= it.bodyClass || '' %>">
+    <% if (it.user) { %>
+    <header class="topbar">
+      <a class="brand" href="/">Mega <span>Portal</span></a>
+      <nav>
+        <% if (it.user.roles.includes('portal-admin')) { %><a href="/admin/apps">앱 관리</a><% } %>
+      </nav>
+      <span class="who"><%= it.user.name || it.user.email || it.user.sub %></span>
+      <%/* GET 로그아웃은 CSRF에 취약하므로 form POST로 보낸다. */%>
+      <form method="post" action="/api/auth/logout">
+        <button class="btn" type="submit">로그아웃</button>
+      </form>
+    </header>
+    <% } %>
+
+    <%~ it.body %>
+  </body>
+</html>

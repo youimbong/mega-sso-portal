@@ -1,0 +1,8 @@
+<% layout("../layout") %>
+<main class="wrap">
+  <h1>앱 카탈로그</h1>
+  <p class="muted">포털에 노출할 앱을 등록한다. 계정과 권한 자체는 Keycloak이 관리한다.</p>
+
+  <%~ include("./form", { errors: it.errors, values: it.values }) %>
+  <%~ include("./table", { apps: it.apps, oob: false }) %>
+</main>
