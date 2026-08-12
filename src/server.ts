@@ -50,6 +50,11 @@ export async function buildServer() {
         frameAncestors: ["'none'"],
       },
     },
+    // helmet 기본값은 no-referrer인데, 그러면 Chrome이 최상위 폼 POST에 Origin을 "null"로
+    // 보낸다(실측: 로그아웃 폼 → origin:"null", sec-fetch-site:same-origin, referer 없음).
+    // registerOriginCheck가 그걸 거부해 로그아웃이 403으로 죽었다. same-origin이면 같은 출처
+    // 요청에만 referrer가 붙고 Origin도 정상으로 온다. 외부로는 여전히 referrer를 안 보낸다.
+    referrerPolicy: { policy: 'same-origin' },
     crossOriginEmbedderPolicy: false,
     // iframe 안의 앱이 리소스를 불러오는 것을 막지 않는다.
     crossOriginResourcePolicy: false,
