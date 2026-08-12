@@ -7,10 +7,23 @@
     <% if (!it.target.enabled) { %><span class="tag off">중지됨</span><% } %>
     <% if (it.federated) { %><span class="tag">외부(AD/LDAP)</span><% } %>
     <% if (it.isSelf) { %><span class="tag">본인</span><% } %>
+    <% if (it.retired) { %><span class="tag off">퇴직</span><% } %>
   </h1>
   <p class="muted">
     <%= [it.target.lastName, it.target.firstName].filter(Boolean).join(' ') || '이름 없음' %>
     · <%= it.target.email || '이메일 없음' %>
+  </p>
+
+  <%/* --- 연결된 직원 --- */%>
+  <p class="muted">
+    <% if (!it.employeeCode) { %>
+    직원 연결 없음(시스템 계정) · <code>employee_code</code> claim이 실리지 않는다.
+    <% } else if (!it.employee) { %>
+    사번 <code><%= it.employeeCode %></code> (미러에 없음) · 직원 동기화를 실행하거나 A10에서 확인하라.
+    <% } else { %>
+    사번 <code><%= it.employeeCode %></code> ·
+    <%= [it.employee.koreanName, it.employee.departmentName].filter(Boolean).join(' · ') %>
+    <% } %>
   </p>
 
   <% if (it.errors && it.errors.length) { %>

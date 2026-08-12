@@ -439,3 +439,50 @@ h2 {
   justify-content: flex-end;
   background: #fafbfc;
 }
+
+/* --- 직원 선택 --- */
+.picker {
+  margin-top: 12px;
+}
+
+.picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.picker-list li,
+.picked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.picker-list .muted,
+.picked .muted {
+  margin-left: 6px;
+  font-size: 13px;
+}
+
+.picked {
+  margin-bottom: 16px;
+  background: #fafbfc;
+}
+
+/* 링크처럼 보이는 htmx 버튼(a[href] 없이 hx-get만 있는 것). */
+.linkish {
+  color: var(--brand);
+  cursor: pointer;
+}
+.linkish:hover {
+  text-decoration: underline;
+}

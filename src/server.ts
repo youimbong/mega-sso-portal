@@ -15,6 +15,7 @@ import {
   registerAuth,
   registerOriginCheck,
 } from './domains/auth/index.js'
+import { hrRoutes } from './domains/hr/index.js'
 import { portalRoutes } from './domains/portal/index.js'
 import { usersRoutes } from './domains/users/index.js'
 import { closeDb } from './shared/db.js'
@@ -80,6 +81,7 @@ export async function buildServer() {
   await app.register(portalRoutes)
   await app.register(appsRoutes)
   await app.register(usersRoutes)
+  await app.register(hrRoutes)
 
   app.setNotFoundHandler(async (request, reply) =>
     reply.code(404).view('shared/views/error', {

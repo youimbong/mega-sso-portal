@@ -5,7 +5,10 @@
     Keycloak의 계정을 여기서 관리한다. 관리 콘솔에 들어갈 필요 없다.
   </p>
 
-  <%~ include("./user-form", { errors: it.errors, values: it.values }) %>
+  <%~ include("./user-form", {
+    errors: it.errors, values: it.values,
+    employee: it.employee, standalone: it.standalone
+  }) %>
 
   <div class="searchbar">
     <input

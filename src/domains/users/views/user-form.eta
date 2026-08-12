@@ -1,3 +1,10 @@
+<%/*
+  새 사용자 폼. 세 모습을 갖는다.
+  1) employee 없음 + standalone 아님 → 직원 검색 (기본 경로)
+  2) employee 있음               → 직원 카드 + 아이디/비밀번호
+  3) standalone                  → 직원 연결 없는 시스템 계정 (성명·이메일 수기 입력)
+  성명·이메일은 (2)에서 폼으로 받지 않는다. 서버가 사번으로 미러를 다시 읽어 채운다.
+*/%>
 <section id="user-form-wrap" class="panel">
   <h2>새 사용자</h2>
 
@@ -7,12 +14,83 @@
   </ul>
   <% } %>
 
+  <% if (!it.employee && !it.standalone) { %>
+  <%/* --- 1단계: 직원 검색 --- */%>
+  <p class="muted">계정은 A10 직원(사번)에 연결해서 만든다. 먼저 직원을 찾아 선택하라.</p>
+
+  <div class="searchbar">
+    <input
+      type="search"
+      name="q"
+      placeholder="사번 · 성명 검색 (2자 이상)"
+      hx-get="/admin/users/employees"
+      hx-trigger="input changed delay:300ms, search"
+      hx-target="#employee-picker"
+      hx-swap="outerHTML"
+    />
+  </div>
+
+  <%~ include("./employee-picker", { q: '', employees: [] }) %>
+
+  <p class="muted">
+    <a
+      class="linkish"
+      hx-get="/admin/users/new?standalone=1"
+      hx-target="#user-form-wrap"
+      hx-swap="outerHTML"
+    >직원 연결 없이 만들기(시스템 계정)</a>
+  </p>
+
+  <% } else { %>
+  <%/* --- 2·3단계: 계정 입력 --- */%>
+  <% if (it.employee) { %>
+  <div class="picked">
+    <span>
+      <code><%= it.employee.code %></code>
+      <b><%= it.employee.koreanName %></b>
+      <span class="muted">
+        <%= it.employee.departmentName || '부서 정보 없음' %>
+        · <%= it.employee.payrollEmail || '이메일 없음' %>
+      </span>
+    </span>
+    <a
+      class="btn sm"
+      hx-get="/admin/users/new"
+      hx-target="#user-form-wrap"
+      hx-swap="outerHTML"
+    >다시 선택</a>
+  </div>
+  <% } else { %>
+  <p class="muted">
+    직원에 연결되지 않는 계정이다. 사번 claim이 실리지 않으므로 다른 솔루션은 이 계정을 직원으로 보지 않는다.
+    <a
+      class="linkish"
+      hx-get="/admin/users/new"
+      hx-target="#user-form-wrap"
+      hx-swap="outerHTML"
+    >직원 연결로 돌아가기</a>
+  </p>
+  <% } %>
+
   <form hx-post="/admin/users" hx-target="#user-form-wrap" hx-swap="outerHTML" class="form-grid">
+    <% if (it.employee) { %>
+    <input type="hidden" name="employeeCode" value="<%= it.employee.code %>" />
+    <% } else { %>
+    <input type="hidden" name="standalone" value="true" />
+    <% } %>
+
     <label>
       아이디
       <input name="username" required placeholder="hong.gd" value="<%= it.values.username || '' %>" />
     </label>
 
+    <% if (it.employee) { %>
+    <label>
+      성명 · 이메일
+      <input value="<%= it.employee.koreanName %> · <%= it.employee.payrollEmail || '이메일 없음' %>" readonly />
+      <small>A10에서 가져온다. 고치려면 A10에서 고치고 다시 동기화한다.</small>
+    </label>
+    <% } else { %>
     <label>
       이메일
       <input name="email" type="email" placeholder="hong@megastudy.net" value="<%= it.values.email || '' %>" />
@@ -27,6 +105,7 @@
       이름
       <input name="firstName" placeholder="길동" value="<%= it.values.firstName || '' %>" />
     </label>
+    <% } %>
 
     <label>
       초기 비밀번호
@@ -46,4 +125,5 @@
       <button class="btn primary" type="submit">등록</button>
     </div>
   </form>
+  <% } %>
 </section>

@@ -1,0 +1,53 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <h1>직원 동기화</h1>
+  <p class="muted">
+    A10 사원등록조회를 그대로 받아 미러에 담는다. 사용자 등록 화면의 직원 검색이 이 미러를 읽는다.
+    직원 정보를 고치려면 A10에서 고치고 여기서 다시 동기화한다.
+  </p>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <% if (it.notice === 'synced') { %>
+  <p class="notice">
+    동기화했다. A10에서 <%= it.fetched %>건을 받아 <%= it.upserted %>건을 미러에 반영했다.
+  </p>
+  <% } %>
+
+  <section class="panel">
+    <table class="tbl">
+      <tbody>
+        <tr>
+          <th>전체</th>
+          <td><%= it.counts.total %>명</td>
+        </tr>
+        <tr>
+          <th>재직</th>
+          <td><%= it.counts.total - it.counts.retired %>명</td>
+        </tr>
+        <tr>
+          <th>퇴직</th>
+          <td><%= it.counts.retired %>명</td>
+        </tr>
+        <tr>
+          <th>마지막 동기화</th>
+          <td>
+            <% if (it.lastSyncedAt) { %><%= new Date(it.lastSyncedAt).toLocaleString('ko-KR') %>
+            <% } else { %><span class="muted">한 번도 하지 않았다</span><% } %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="btnrow">
+      <%/* 전건 조회라 수십 초가 걸릴 수 있다. htmx 조각이 아니라 일반 폼 POST로 보낸다. */%>
+      <form method="post" action="/admin/hr/sync">
+        <button class="btn primary" type="submit">지금 동기화</button>
+      </form>
+    </div>
+  </section>
+</main>

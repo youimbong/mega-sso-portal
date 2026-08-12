@@ -6,6 +6,8 @@
     <title><%= it.title ? it.title + ' · ' : '' %><%= it.appName %></title>
     <link rel="stylesheet" href="/static/app.css" />
     <script src="/static/htmx.min.js" defer></script>
+    <%/* 422(폼 검증 실패)를 swap 대상으로 연다. CSP 때문에 인라인이 아니라 별도 파일이다. */%>
+    <script src="/static/htmx-config.js" defer></script>
   </head>
   <body class="<%= it.bodyClass || '' %>">
     <% if (it.user) { %>
@@ -15,6 +17,7 @@
         <% if (it.user.roles.includes('portal-admin')) { %>
         <a href="/admin/apps">앱 관리</a>
         <a href="/admin/users">사용자</a>
+        <a href="/admin/hr">직원 동기화</a>
         <% } %>
       </nav>
       <span class="who"><%= it.user.name || it.user.email || it.user.sub %></span>

@@ -17,6 +17,21 @@ const schema = z.object({
   OIDC_CLIENT_SECRET: z.string().min(1),
 
   DATABASE_URL: z.string().min(1),
+
+  /**
+   * A10(사원 정보 원천) 연동.
+   * 전부 optional이다 — 자격증명 없이도 포털은 뜨고 로그인·앱 카탈로그는 동작한다.
+   * 동기화를 실행하는 시점에 hr 도메인이 누락을 확인해 즉시 실패시킨다.
+   */
+  A10_API_BASE_URL: z.url().optional(),
+  A10_ACCESS_TOKEN: z.string().min(1).optional(),
+  A10_HASH_KEY: z.string().min(1).optional(),
+  A10_CALLER_NAME: z.string().min(1).optional(),
+  A10_GROUP_SEQ: z.string().min(1).optional(),
+  /** 회사코드. 사원등록조회의 필수 파라미터다. */
+  A10_CO_CD: z.string().min(1).optional(),
+  /** 사업장코드. 비워두면 전 사업장을 받는다. */
+  A10_DIV_CD: z.string().min(1).optional(),
 })
 
 const parsed = schema.safeParse(process.env)

@@ -2,6 +2,7 @@
   <thead>
     <tr>
       <th>아이디</th>
+      <th>사번</th>
       <th>이름</th>
       <th>이메일</th>
       <th>출처</th>
@@ -12,7 +13,7 @@
   <tbody>
     <% if (it.users.length === 0) { %>
     <tr>
-      <td colspan="6" class="muted center">
+      <td colspan="7" class="muted center">
         <% if (it.q) { %>"<%= it.q %>"에 해당하는 사용자가 없다.<% } else { %>사용자가 없다.<% } %>
       </td>
     </tr>
@@ -21,6 +22,8 @@
     <% it.users.forEach(function (u) { %>
     <tr class="<%= u.enabled ? '' : 'off' %>">
       <td><code><%= u.username %></code></td>
+      <%/* 사번이 없는 계정(시스템 계정)은 —. 중복 사번을 눈으로 찾을 수 있게 열로 노출한다. */%>
+      <td><% if (u.employeeCode) { %><code><%= u.employeeCode %></code><% } else { %>—<% } %></td>
       <td><%= [u.lastName, u.firstName].filter(Boolean).join(' ') || '—' %></td>
       <td class="url"><%= u.email || '—' %></td>
       <td>
@@ -41,7 +44,7 @@
   <% if (it.pageCount > 1) { %>
   <tfoot>
     <tr>
-      <td colspan="6" class="pager">
+      <td colspan="7" class="pager">
         <% if (it.page > 1) { %>
         <button
           class="btn sm"

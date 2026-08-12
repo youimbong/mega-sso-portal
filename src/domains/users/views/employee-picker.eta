@@ -1,0 +1,30 @@
+<%/* 직원 검색 결과 조각. 퇴직자는 서버에서 이미 걸러져 여기 오지 않는다. */%>
+<div id="employee-picker" class="picker">
+  <% if (!it.q || it.q.length < 2) { %>
+  <p class="muted">사번 또는 성명을 2자 이상 입력하라.</p>
+  <% } else if (it.employees.length === 0) { %>
+  <p class="muted">"<%= it.q %>"에 해당하는 재직 직원이 없다. 최근 입사자라면 직원 동기화를 먼저 실행하라.</p>
+  <% } else { %>
+  <ul class="picker-list">
+    <% it.employees.forEach(function (e) { %>
+    <li>
+      <span>
+        <code><%= e.code %></code>
+        <b><%= e.koreanName %></b>
+        <span class="muted">
+          <%/* 직종명·사업장명은 실측상 값이 1종뿐이라 사람을 구분하지 못한다. 부서명만 띄운다. */%>
+          <%= e.departmentName || '부서 정보 없음' %>
+        </span>
+      </span>
+      <button
+        class="btn sm"
+        type="button"
+        hx-get="/admin/users/new?employeeCode=<%= encodeURIComponent(e.code) %>"
+        hx-target="#user-form-wrap"
+        hx-swap="outerHTML"
+      >선택</button>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</div>
