@@ -19,3 +19,6 @@ npm-debug.log*
 
 next-env.d.ts
 *.tsbuildinfo
+
+# render-realm.mjs가 템플릿에서 생성한다
+docker/keycloak/realm-mega.json

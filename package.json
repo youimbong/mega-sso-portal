@@ -16,9 +16,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "infra:up": "docker compose -f docker/compose.yml up -d",
+    "infra:up": "node scripts/render-realm.mjs && docker compose -f docker/compose.yml up -d",
     "infra:down": "docker compose -f docker/compose.yml down",
-    "infra:logs": "docker compose -f docker/compose.yml logs -f"
+    "infra:logs": "docker compose -f docker/compose.yml logs -f",
+    "realm:render": "node scripts/render-realm.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",
