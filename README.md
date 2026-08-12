@@ -68,21 +68,21 @@ pnpm build && pnpm start
 
 ## 구조
 
+도메인 주도 구조다. 도메인 하나 = 폴더 하나이며, 내부는 `router`(HTTP) / `service`(로직) /
+`views`(Eta) / `schema`(소유 테이블) / `index.ts`(공개 API) / `CLAUDE.md`(도메인 규칙)로 고정한다.
+
 ```
 src/
-  server.ts        Fastify 부트스트랩, 플러그인, CSP
-  env.ts           zod로 환경변수 검증 (실패 시 기동 거부)
-  auth.ts          세션 쿠키 → request.user, 권한 가드, Origin 검사
-  oidc.ts          Keycloak discovery 캐시
-  session.ts       서버측 세션 CRUD
-  apps.ts          앱 카탈로그 조회/등록
-  visibility.ts    앱 노출 정책 (순수 함수, 테스트 있음)
-  url-safety.ts    open redirect 방어 (순수 함수, 테스트 있음)
-  routes/
-    auth.ts        로그인 / 콜백 / 로그아웃 / back-channel logout
-    portal.ts      홈, iframe 화면
-    admin.ts       앱 카탈로그 관리 (htmx)
-views/             Eta 템플릿
+  server.ts        Fastify 부트스트랩, 플러그인, CSP, 도메인 라우터 등록
+  shared/          횡단 관심사 — 도메인이 아니다
+    env.ts           zod로 환경변수 검증 (실패 시 기동 거부)
+    db.ts            PostgreSQL 연결 (테이블 스키마는 각 도메인 소유)
+    views/           layout.eta, error.eta
+  domains/
+    auth/            로그인·콜백·로그아웃·back-channel logout, 세션, 권한 가드. sessions 테이블 소유
+    portal/          홈, iframe 화면
+    apps/            앱 카탈로그와 노출 정책 (/admin/apps). apps·app_roles 테이블 소유
+    users/           사용자 관리 (/admin/users). Keycloak Admin REST API (service account)
 public/            app.css, htmx.min.js
 scripts/
   render-realm.mjs .env → Keycloak realm import 파일 생성
@@ -92,6 +92,55 @@ docker/
   keycloak/realm-mega.json            생성물 (gitignore)
   postgres/init.sql
 ```
+
+도메인 규칙:
+
+- **도메인 간 참조는 상대 도메인의 `index.ts`를 통해서만** 한다. 내부 파일 직접 import 금지.
+  의존 방향은 `portal → apps → auth`, `users → auth` 한 방향이다. auth는 어떤 도메인에도 의존하지 않는다.
+- 도메인별 상세 규칙(안전장치 포함)은 각 폴더의 `CLAUDE.md`에 있다. AI 에이전트는 해당 도메인
+  폴더만 읽고 작업할 수 있다.
+- `.eta` 템플릿은 tsc가 컴파일하지 않으므로 빌드 후에도 `src/` 안의 원본을 그대로 읽는다.
+  배포 시 `dist/`와 함께 `src/`도 있어야 한다.
+
+## 사용자 관리
+
+Keycloak 관리 콘솔에 들어가지 않고 포털에서 관리한다. `portal-admin` 역할이 있어야 보인다.
+
+| 화면 | 하는 일 |
+| --- | --- |
+| `/admin/users` | 검색, 목록, 사용자 등록 |
+| `/admin/users/:id` | 역할 부여, 비밀번호 재설정, 세션 강제 종료, 활성/비활성, 삭제 |
+
+포털은 `portal` 클라이언트의 **service account**로 Keycloak Admin REST API를 호출한다. 그 계정에는
+`realm-management`의 `query-users` / `view-users` / `view-realm` / `manage-users` 만 있다.
+`realm-admin`은 주지 않았으므로 이 경로로 클라이언트나 realm 설정을 바꿀 수 없다
+(`GET /clients`는 403으로 확인).
+
+### 안전장치
+
+구조적으로 막아둔 것들이다. 모두 테스트로 고정했거나 실제로 검증했다.
+
+- **관리 UI에 없는 역할은 절대 제거하지 않는다.** 체크박스가 없는 `default-roles-mega`를
+  "해제됨"으로 오인해 지우면 계정이 망가진다. `diffRoles`가 제거 후보를 화면에 보이는 역할로 한정한다.
+- **폼을 조작해 `realm-admin`을 밀어넣어도 무시한다.** 부여 대상도 같은 목록으로 한정한다.
+- **자기 자신은** `portal-admin` 제거·비활성화·삭제가 안 된다. 마지막 관리자가 스스로 잠기는 사고를 막는다.
+- **비활성화하면 세션도 함께 끊는다.** 안 그러면 최대 10시간 동안 계속 쓸 수 있다.
+- **service account 계정은 목록에 나오지 않는다.**
+- **외부(AD/LDAP) 사용자는 읽기 전용이다.** `federationLink`가 있으면 비밀번호 변경과 삭제를 막고
+  화면에 `외부(AD/LDAP)` 배지를 붙인다. 계정 원본은 AD가 소유해야 한다.
+
+### 역할과 앱 노출의 연결
+
+```
+포털 /admin/users/:id  →  사용자에게 hr-team 부여
+포털 /admin/apps       →  인사시스템의 노출 역할 = hr-team
+                       →  hr-team 보유자의 홈에만 인사시스템이 보인다
+```
+
+노출 역할을 비우면 로그인한 모두에게 보인다. `portal-admin`은 카탈로그 관리 권한일 뿐,
+남의 업무 앱에 자동 접근권을 주지 않는다.
+
+역할 **생성**은 아직 포털에 없다. 새 역할이 필요하면 Keycloak 콘솔의 Realm roles에서 만든다.
 
 ## 설계 결정
 
