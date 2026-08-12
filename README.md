@@ -19,9 +19,9 @@
 ```bash
 cp .env.example .env          # SESSION_SECRET은 openssl rand -base64 32 로 교체
 pnpm install
-pnpm infra:up                 # Keycloak + PostgreSQL
+pnpm infra:up                 # realm 렌더 → Keycloak + PostgreSQL
 pnpm db:migrate
-pnpm dev                      # http://localhost:3100
+pnpm dev                      # http://localhost:3200
 ```
 
 기본 계정(로컬 전용, `docker/keycloak/realm-mega.json`에서 import):
@@ -33,15 +33,30 @@ pnpm dev                      # http://localhost:3100
 
 Keycloak 관리 콘솔은 http://localhost:8080 (`admin` / `admin`).
 
-### 포트
+### 포트 바꾸기
 
-로컬에 이미 PostgreSQL(5432)과 다른 dev 서버(3000)가 떠 있어 그것을 피했다.
+`.env`의 `APP_BASE_URL` **하나만** 고치고 realm을 다시 렌더링하면 된다.
 
-| 서비스 | 포트 |
-| --- | --- |
-| 포털 | 3100 |
-| Keycloak | 8080 |
-| PostgreSQL | 5433 → 컨테이너 5432 |
+```bash
+sed -i '' 's|3200|3400|' .env
+pnpm realm:render                                    # redirect_uri 등 재생성
+docker compose -f docker/compose.yml up -d --force-recreate keycloak
+pnpm dev
+```
+
+`APP_BASE_URL`이 단일 출처다. 바인딩 포트는 여기서 자동으로 뽑고, Keycloak의 `redirect_uri` /
+`post.logout.redirect.uris` / back-channel logout URL도 같은 값에서 생성된다. 포트만 바꾸고
+Keycloak 설정을 안 고쳐서 로그인이 깨지는 사고가 구조적으로 나지 않는다.
+
+리버스 프록시 뒤처럼 공개 주소와 바인딩 포트가 달라야 할 때만 `PORT`를 따로 준다.
+
+| 서비스 | 포트 | 비고 |
+| --- | --- | --- |
+| 포털 | 3200 | `APP_BASE_URL`로 결정 |
+| Keycloak | 8080 | |
+| PostgreSQL | 5433 → 컨테이너 5432 | 호스트 5432는 로컬 PostgreSQL이 사용 중 |
+
+이 기본값은 로컬에 이미 3000·3100(다른 프로젝트)과 5432(로컬 PostgreSQL)가 떠 있어 그것을 피한 것이다.
 
 ## 검증
 
@@ -69,7 +84,13 @@ src/
     admin.ts       앱 카탈로그 관리 (htmx)
 views/             Eta 템플릿
 public/            app.css, htmx.min.js
-docker/            compose.yml, Keycloak realm, DB 초기화
+scripts/
+  render-realm.mjs .env → Keycloak realm import 파일 생성
+docker/
+  compose.yml
+  keycloak/realm-mega.template.json   원본 (git 추적)
+  keycloak/realm-mega.json            생성물 (gitignore)
+  postgres/init.sql
 ```
 
 ## 설계 결정
@@ -77,6 +98,8 @@ docker/            compose.yml, Keycloak realm, DB 초기화
 **세션을 쿠키가 아니라 DB에 둔다.** Keycloak ID token만 1.3KB이고 다른 토큰까지 더하면 쿠키 4KB 한계에 걸린다. 더 중요한 이유는 back-channel logout이다 — Keycloak이 보내는 `sid`로 해당 세션을 찾아 끊으려면 서버에 세션이 있어야 한다. 쿠키에는 서명된 세션 id만 담는다.
 
 **access token / refresh token을 저장하지 않는다.** 포털은 사용자 토큰으로 다른 API를 호출하지 않는다. 필요한 것은 로그아웃용 `id_token`뿐이다. 나중에 앱을 프록시하게 되면 그때 추가한다.
+
+**Keycloak realm 파일은 템플릿에서 생성한다.** Keycloak 26은 realm import JSON 안의 `${...}`를 치환해주지 않는다 — 확인된 동작은 `${env.FOO}`를 그대로 URI로 검증해서 `Invalid client portal: A redirect URI is not a valid URI`로 기동에 실패하는 것이다. 그래서 `scripts/render-realm.mjs`가 컨테이너에 넘기기 전에 `.env` 값으로 치환하고, JSON 파싱까지 확인한 뒤 파일을 쓴다.
 
 **realm role을 ID token에 넣는 mapper가 필요하다.** Keycloak 기본값은 `realm_access.roles`를 access token에만 넣는다. realm JSON의 `portal` 클라이언트에 `oidc-usermodel-realm-role-mapper`를 명시적으로 추가해둔 이유다.
 

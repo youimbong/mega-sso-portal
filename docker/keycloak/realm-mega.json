@@ -36,11 +36,11 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
-      "redirectUris": ["http://localhost:3100/api/auth/callback"],
-      "webOrigins": ["http://localhost:3100"],
+      "redirectUris": ["http://localhost:3200/api/auth/callback"],
+      "webOrigins": ["http://localhost:3200"],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:3100/*",
-        "backchannel.logout.url": "http://host.docker.internal:3100/api/auth/backchannel-logout",
+        "post.logout.redirect.uris": "http://localhost:3200/*",
+        "backchannel.logout.url": "http://host.docker.internal:3200/api/auth/backchannel-logout",
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false",
         "pkce.code.challenge.method": "S256"
@@ -61,14 +61,7 @@
           }
         }
       ],
-      "defaultClientScopes": [
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "basic",
-        "email"
-      ]
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "basic", "email"]
     }
   ],
   "users": [
