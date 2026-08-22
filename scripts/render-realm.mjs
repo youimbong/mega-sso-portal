@@ -17,7 +17,7 @@ const templatePath = fileURLToPath(
 )
 const outputPath = fileURLToPath(new URL('../docker/keycloak/realm-mega.json', import.meta.url))
 
-const appBaseUrl = (process.env.APP_BASE_URL ?? 'http://localhost:3200').replace(/\/+$/, '')
+const appBaseUrl = (process.env.APP_BASE_URL ?? 'http://localhost:30400').replace(/\/+$/, '')
 
 let parsedUrl
 try {

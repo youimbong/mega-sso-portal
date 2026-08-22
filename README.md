@@ -22,7 +22,7 @@ cp .env.example .env          # SESSION_SECRET은 openssl rand -base64 32 로 �
 pnpm install
 pnpm infra:up                 # realm 렌더 → Keycloak + PostgreSQL
 pnpm db:migrate
-pnpm dev                      # http://localhost:3200
+pnpm dev                      # http://localhost:30400
 ```
 
 기본 계정(로컬 전용, `docker/keycloak/realm-mega.json`에서 import):
@@ -69,7 +69,7 @@ realm을 지우고 다시 만드는 것이므로 **콘솔이나 포털에서 만
 `.env`의 `APP_BASE_URL` **하나만** 고치고 realm을 다시 렌더링하면 된다.
 
 ```bash
-sed -i '' 's|3200|3400|' .env
+sed -i '' 's|30400|3400|' .env
 pnpm realm:render                                    # redirect_uri 등 재생성
 docker compose -f docker/compose.yml up -d --force-recreate keycloak
 pnpm dev
@@ -83,7 +83,7 @@ Keycloak 설정을 안 고쳐서 로그인이 깨지는 사고가 구조적으�
 
 | 서비스 | 포트 | 비고 |
 | --- | --- | --- |
-| 포털 | 3200 | `APP_BASE_URL`로 결정 |
+| 포털 | 30400 | `APP_BASE_URL`로 결정 |
 | Keycloak | 8080 | |
 | PostgreSQL | 5433 → 컨테이너 5432 | 호스트 5432는 로컬 PostgreSQL이 사용 중 |
 

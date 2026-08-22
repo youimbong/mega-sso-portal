@@ -35,13 +35,13 @@ COPY views ./views
 COPY public ./public
 
 USER node
-EXPOSE 3100
+EXPOSE 30400
 
 # 컨테이너 안에서는 모든 인터페이스에 바인딩해야 외부에서 접근된다.
 ENV HOST=0.0.0.0
-ENV PORT=3100
+ENV PORT=30400
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-  CMD node -e "fetch('http://127.0.0.1:3100/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:30400/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/server.js"]
