@@ -1,0 +1,50 @@
+<table id="sso-client-table" class="tbl" <% if (it.oob) { %>hx-swap-oob="true"<% } %>>
+  <thead>
+    <tr>
+      <th>이름</th>
+      <th>client_id</th>
+      <th>redirect_uri</th>
+      <th>필요 역할</th>
+      <th>로그아웃 통지</th>
+      <th>상태</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (it.clients.length === 0) { %>
+    <tr>
+      <td colspan="7" class="muted center">등록된 클라이언트가 없다.</td>
+    </tr>
+    <% } %>
+
+    <% it.clients.forEach(function (c) { %>
+    <tr class="<%= c.enabled ? '' : 'off' %>">
+      <td><a href="/admin/sso-clients/<%= c.id %>"><%= c.name %></a></td>
+      <td><code><%= c.clientId %></code></td>
+      <td class="url"><%= c.redirectUris.join(', ') %></td>
+      <td><%= c.requiredRoles.length ? c.requiredRoles.join(', ') : '전체' %></td>
+      <td><%= c.backchannelLogoutUri ? '있음' : '없음' %></td>
+      <td><%= c.enabled ? '사용' : '중지' %></td>
+      <td class="actions">
+        <button
+          class="btn sm"
+          hx-post="/admin/sso-clients/<%= c.id %>/toggle"
+          hx-target="#sso-client-table"
+          hx-swap="outerHTML"
+        >
+          <%= c.enabled ? '중지' : '사용' %>
+        </button>
+        <button
+          class="btn sm danger"
+          hx-post="/admin/sso-clients/<%= c.id %>/delete"
+          hx-target="#sso-client-table"
+          hx-swap="outerHTML"
+          hx-confirm="<%= c.clientId %> 클라이언트를 삭제할까? 그 앱의 로그인이 즉시 끊긴다."
+        >
+          삭제
+        </button>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>

@@ -1,0 +1,67 @@
+<%/* 수정 폼. htmx가 이 조각을 통째로 교체한다. */%>
+<section id="sso-edit-wrap" class="panel">
+  <h2>설정 수정</h2>
+
+  <% if (it.saved) { %><p class="muted">저장했다.</p><% } %>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <form
+    hx-post="/admin/sso-clients/<%= it.client.id %>"
+    hx-target="#sso-edit-wrap"
+    hx-swap="outerHTML"
+    class="form-grid"
+  >
+    <label class="span2">
+      이름
+      <input name="name" required value="<%= it.client.name %>" />
+    </label>
+
+    <label class="span2">
+      redirect_uri
+      <textarea name="redirectUris" rows="3" required><%= Array.isArray(it.client.redirectUris) ? it.client.redirectUris.join('\n') : it.client.redirectUris %></textarea>
+      <small>한 줄에 하나. 완전 일치로만 검증한다.</small>
+    </label>
+
+    <label class="span2">
+      post_logout_redirect_uri
+      <textarea name="postLogoutRedirectUris" rows="2"><%= Array.isArray(it.client.postLogoutRedirectUris) ? it.client.postLogoutRedirectUris.join('\n') : it.client.postLogoutRedirectUris %></textarea>
+    </label>
+
+    <label class="span2">
+      backchannel_logout_uri
+      <input name="backchannelLogoutUri" value="<%= it.client.backchannelLogoutUri || '' %>" />
+    </label>
+
+    <label class="span2">
+      필요 역할
+      <input name="requiredRoles" value="<%= Array.isArray(it.client.requiredRoles) ? it.client.requiredRoles.join(', ') : it.client.requiredRoles %>" />
+    </label>
+
+    <label class="checkbox">
+      <span>
+        <input type="checkbox" name="enabled" value="true" <%= it.client.enabled ? 'checked' : '' %> />
+        사용
+      </span>
+      <small>끄면 이 앱의 로그인이 즉시 거부된다. 등록 정보는 남는다.</small>
+    </label>
+
+    <div class="span2">
+      <button class="btn primary" type="submit">저장</button>
+      <button
+        class="btn"
+        type="button"
+        hx-post="/admin/sso-clients/<%= it.client.id %>/secret"
+        hx-target="#sso-secret"
+        hx-swap="outerHTML"
+        hx-confirm="secret을 재발급하면 기존 secret은 즉시 무효가 된다. 진행할까?"
+      >
+        secret 재발급
+      </button>
+    </div>
+  </form>
+</section>

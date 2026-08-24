@@ -1,0 +1,4 @@
+<%/* 등록 성공: 폼은 비워 교체하고, 목록과 secret 패널은 out-of-band로 함께 갱신한다. */%>
+<%~ include("./form", { errors: [], values: { enabled: 'true' } }) %>
+<%~ include("./table", { clients: it.clients, oob: true }) %>
+<%~ include("./secret", { secret: it.secret, oob: true }) %>

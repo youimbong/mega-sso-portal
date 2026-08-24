@@ -1,0 +1,59 @@
+<%/* htmx가 이 조각 전체를 교체한다. id가 스왑 대상이다. */%>
+<section id="sso-form-wrap" class="panel">
+  <h2>새 클라이언트 등록</h2>
+
+  <% if (it.errors && it.errors.length) { %>
+  <ul class="errors">
+    <% it.errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+  </ul>
+  <% } %>
+
+  <form hx-post="/admin/sso-clients" hx-target="#sso-form-wrap" hx-swap="outerHTML" class="form-grid">
+    <label>
+      client_id
+      <input name="clientId" required placeholder="shop" value="<%= it.values.clientId || '' %>" />
+      <small>등록 후에는 바꿀 수 없다. 하위 앱 설정에 그대로 들어간다.</small>
+    </label>
+
+    <label>
+      이름
+      <input name="name" required placeholder="쇼핑몰 관리자" value="<%= it.values.name || '' %>" />
+    </label>
+
+    <label class="span2">
+      redirect_uri
+      <textarea name="redirectUris" rows="3" required placeholder="https://shop.example.co.kr/auth/callback"><%= it.values.redirectUris || '' %></textarea>
+      <small>한 줄에 하나. 완전 일치로만 검증한다 — 슬래시 하나만 달라도 로그인이 거부된다.</small>
+    </label>
+
+    <label class="span2">
+      post_logout_redirect_uri
+      <textarea name="postLogoutRedirectUris" rows="2" placeholder="https://shop.example.co.kr/"><%= it.values.postLogoutRedirectUris || '' %></textarea>
+      <small>로그아웃 후 돌아갈 주소. 등록하지 않으면 포털 홈으로 보낸다.</small>
+    </label>
+
+    <label class="span2">
+      backchannel_logout_uri
+      <input name="backchannelLogoutUri" placeholder="https://shop.example.co.kr/auth/backchannel-logout" value="<%= it.values.backchannelLogoutUri || '' %>" />
+      <small>비우면 로그아웃을 통지하지 않는다. 그 앱은 자체 세션 만료를 따른다.</small>
+    </label>
+
+    <label class="span2">
+      필요 역할
+      <input name="requiredRoles" placeholder="예: shop-admin" value="<%= it.values.requiredRoles || '' %>" />
+      <small>Keycloak realm role을 쉼표로 구분한다. 비우면 로그인한 모두가 이 앱에 접근한다.</small>
+    </label>
+
+    <label class="checkbox">
+      <span>
+        <input type="checkbox" name="enabled" value="true" <%= it.values.enabled === 'true' ? 'checked' : '' %> />
+        바로 사용
+      </span>
+      <small>끄면 등록만 해두고 로그인은 막는다. 앱 준비가 끝난 뒤 목록에서 켠다.</small>
+    </label>
+
+    <div class="span2">
+      <button class="btn primary" type="submit">등록</button>
+    </div>
+  </form>
+</section>

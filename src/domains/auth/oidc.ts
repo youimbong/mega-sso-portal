@@ -26,6 +26,8 @@ export type IdTokenClaims = {
   email?: string
   name?: string
   preferred_username?: string
+  /** Keycloak portal 클라이언트의 employee_code mapper(= 사용자 employeeCode attribute) 결과. */
+  employee_code?: string
   realm_access?: { roles?: string[] }
 }
 

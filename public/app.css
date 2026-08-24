@@ -486,3 +486,20 @@ h2 {
 .linkish:hover {
   text-decoration: underline;
 }
+
+/* .form-grid input 규칙은 textarea를 잡지 않는다. SSO 클라이언트 폼이 처음 쓴다. */
+.form-grid textarea {
+  padding: 7px 9px;
+  font:
+    15px system-ui,
+    sans-serif;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  resize: vertical;
+}
+.form-grid textarea:focus {
+  outline: 2px solid rgb(37 99 235 / 35%);
+  border-color: var(--brand);
+}

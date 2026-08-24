@@ -16,6 +16,7 @@
       <nav>
         <% if (it.user.roles.includes('portal-admin')) { %>
         <a href="/admin/apps">앱 관리</a>
+        <a href="/admin/sso-clients">SSO 클라이언트</a>
         <a href="/admin/users">사용자</a>
         <a href="/admin/hr">직원 동기화</a>
         <% } %>

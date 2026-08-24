@@ -123,6 +123,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         ssoSid: claims.sid,
         email: claims.email,
         name: claims.name ?? claims.preferred_username,
+        // 표시용 성명(name)과 별도로 남긴다. 하위 앱의 preferred_username claim 원본이다.
+        username: claims.preferred_username,
+        employeeCode: claims.employee_code,
         roles: rolesOf(claims),
         idToken: tokens.id_token,
       })

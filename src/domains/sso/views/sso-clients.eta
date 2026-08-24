@@ -1,0 +1,12 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <h1>SSO 클라이언트</h1>
+  <p class="muted">
+    포털을 OIDC Provider로 바라보는 하위 앱을 등록한다.
+    하위 앱의 discovery 주소는 <code><%= it.baseUrl %>/oidc</code> 다 (끝에 슬래시를 붙이면 안 된다).
+  </p>
+
+  <%~ include("./secret", { secret: null, oob: false }) %>
+  <%~ include("./form", { errors: it.errors, values: it.values }) %>
+  <%~ include("./table", { clients: it.clients, oob: false }) %>
+</main>

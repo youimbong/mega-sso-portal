@@ -11,6 +11,12 @@ export {
   requireAdmin,
   requireUser,
 } from './guard.js'
-export { purgeExpiredSessions } from './service.js'
+export {
+  deleteSession,
+  loadSession,
+  purgeExpiredSessions,
+  SESSION_COOKIE,
+  setSessionEndListener,
+} from './service.js'
 export type { CurrentUser } from './service.js'
 export { getOidcConfig } from './oidc.js'

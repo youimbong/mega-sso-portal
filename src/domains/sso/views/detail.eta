@@ -1,0 +1,13 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <h1><%= it.client.name %></h1>
+  <p class="muted">
+    client_id <code><%= it.client.clientId %></code> ·
+    <%= it.client.enabled ? '사용 중' : '중지됨' %> ·
+    <a href="/admin/sso-clients">목록으로</a>
+  </p>
+
+  <%~ include("./integration", { client: it.client, baseUrl: it.baseUrl }) %>
+  <%~ include("./secret", { secret: null, oob: false }) %>
+  <%~ include("./edit-form", { client: it.client, errors: it.errors, saved: false }) %>
+</main>

@@ -14,6 +14,13 @@ export const sessions = pgTable(
     ssoSid: text('sso_sid'),
     email: text('email'),
     name: text('name'),
+    /**
+     * Keycloak의 `preferred_username`. name과 따로 둔다 —
+     * 하나로 합치면 표시용 성명이 preferred_username 으로 나가 동명이인이 한 사람으로 합쳐진다.
+     */
+    username: text('username'),
+    /** Keycloak의 employeeCode attribute(= A10 사번). 하위 앱 토큰의 employee_code claim 원본이다. */
+    employeeCode: text('employee_code'),
     roles: jsonb('roles').$type<string[]>().notNull().default([]),
     /** RP-initiated logout의 id_token_hint 로만 쓴다. */
     idToken: text('id_token').notNull(),

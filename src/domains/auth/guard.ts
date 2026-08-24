@@ -88,6 +88,12 @@ export function registerOriginCheck(app: FastifyInstance): void {
     // Keycloak이 서버-서버로 호출하므로 브라우저 Origin이 없다. logout_token 서명으로 인증한다.
     if (request.url.startsWith('/api/auth/backchannel-logout')) return
 
+    // 하위 앱의 인가 코드 교환도 서버-서버 호출이라 브라우저 Origin이 없다.
+    // 인증은 client_secret_basic / client_secret_post 로 대체된다(sso/router.ts).
+    // 예외는 이 경로 하나뿐이다 — /oidc/* 의 나머지는 GET이라 이 훅을 타지 않고,
+    // /admin/sso-clients* 의 POST는 브라우저 폼이므로 검사를 그대로 받아야 한다.
+    if (request.url.startsWith('/oidc/token')) return
+
     const origin = request.headers.origin
     if (origin && origin === env.APP_BASE_URL) return
 

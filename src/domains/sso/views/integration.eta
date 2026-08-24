@@ -1,0 +1,73 @@
+<%/* 이 앱 개발자에게 그대로 전달할 값. 여기 없는 것은 discovery 문서에서 읽으면 된다. */%>
+<section class="panel">
+  <h2>연동 정보</h2>
+  <p class="muted">
+    하위 앱은 이 값들로 openid-client를 설정한다. client_secret은 등록·재발급 때 한 번만 보이므로
+    여기에는 나오지 않는다.
+  </p>
+
+  <table class="tbl">
+    <tbody>
+      <tr>
+        <th>issuer</th>
+        <td class="url"><code><%= it.baseUrl %>/oidc</code></td>
+      </tr>
+      <tr>
+        <th>discovery</th>
+        <td class="url">
+          <code><%= it.baseUrl %>/oidc/.well-known/openid-configuration</code>
+          <small class="muted">
+            openid-client에는 끝에 슬래시 없이 <code><%= it.baseUrl %>/oidc</code> 를 넘긴다.
+            슬래시를 붙이면 issuer 비교에서 실패한다.
+          </small>
+        </td>
+      </tr>
+      <tr>
+        <th>client_id</th>
+        <td><code><%= it.client.clientId %></code></td>
+      </tr>
+      <tr>
+        <th>client_secret</th>
+        <td class="muted">발급 화면에서 받은 값. 분실하면 재발급만 가능하다.</td>
+      </tr>
+      <tr>
+        <th>redirect_uri</th>
+        <td class="url">
+          <% it.client.redirectUris.forEach(function (uri) { %>
+          <code><%= uri %></code><br />
+          <% }) %>
+          <small class="muted">완전 일치로만 검증한다. 앱이 보내는 값과 한 글자도 달라선 안 된다.</small>
+        </td>
+      </tr>
+      <tr>
+        <th>post_logout_redirect_uri</th>
+        <td class="url">
+          <% if (it.client.postLogoutRedirectUris.length) { %>
+          <% it.client.postLogoutRedirectUris.forEach(function (uri) { %>
+          <code><%= uri %></code><br />
+          <% }) %>
+          <% } else { %>
+          <span class="muted">없음 — 로그아웃 후 포털 홈으로 보낸다.</span>
+          <% } %>
+        </td>
+      </tr>
+      <tr>
+        <th>backchannel_logout_uri</th>
+        <td class="url">
+          <% if (it.client.backchannelLogoutUri) { %>
+          <code><%= it.client.backchannelLogoutUri %></code>
+          <% } else { %>
+          <span class="muted">없음 — 포털이 로그아웃을 통지하지 않는다.</span>
+          <% } %>
+        </td>
+      </tr>
+      <tr>
+        <th>필수 설정</th>
+        <td class="muted">
+          response_type=code, PKCE S256 필수, scope는 <code>openid</code> 포함.
+          refresh_token은 발급하지 않는다.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

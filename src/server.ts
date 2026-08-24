@@ -14,9 +14,17 @@ import {
   purgeExpiredSessions,
   registerAuth,
   registerOriginCheck,
+  setSessionEndListener,
 } from './domains/auth/index.js'
 import { hrRoutes } from './domains/hr/index.js'
 import { portalRoutes } from './domains/portal/index.js'
+import {
+  ensureSigningKey,
+  notifyPortalSessionsEnded,
+  purgeExpiredAuthCodes,
+  ssoAdminRoutes,
+  ssoRoutes,
+} from './domains/sso/index.js'
 import { usersRoutes } from './domains/users/index.js'
 import { closeDb } from './shared/db.js'
 import { env, isProd } from './shared/env.js'
@@ -82,6 +90,8 @@ export async function buildServer() {
   await app.register(appsRoutes)
   await app.register(usersRoutes)
   await app.register(hrRoutes)
+  await app.register(ssoRoutes)
+  await app.register(ssoAdminRoutes)
 
   app.setNotFoundHandler(async (request, reply) =>
     reply.code(404).view('shared/views/error', {
@@ -97,11 +107,20 @@ export async function buildServer() {
 async function main() {
   const app = await buildServer()
 
+  // 포털 세션이 끝나면 그 세션으로 로그인한 하위 앱들에 back-channel logout을 보낸다.
+  // auth는 sso를 import하지 않으므로(의존 그래프의 뿌리) 배선은 여기서 한 번만 한다.
+  setSessionEndListener(notifyPortalSessionsEnded)
+
+  // OP 서명키는 DB가 원본이다. 없으면 여기서 만든다. JWK는 절대 로그에 남기지 않는다 — kid만.
+  const kid = await ensureSigningKey()
+  app.log.info({ kid }, 'OP 서명키 준비')
+
   const purged = await purgeExpiredSessions()
   if (purged > 0) app.log.info({ purged }, '만료된 세션 정리')
 
   const timer = setInterval(() => {
     purgeExpiredSessions().catch((err: unknown) => app.log.error({ err }, '세션 정리 실패'))
+    purgeExpiredAuthCodes().catch((err: unknown) => app.log.error({ err }, '인가 코드 정리 실패'))
   }, SESSION_PURGE_INTERVAL_MS)
   timer.unref()
 
