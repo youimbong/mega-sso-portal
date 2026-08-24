@@ -64,6 +64,16 @@ import를 마친 뒤 그 프로세스가 서버로 뜨려다 실패하는 것이
 realm을 지우고 다시 만드는 것이므로 **콘솔이나 포털에서 만든 계정은 사라진다.**
 운영 Keycloak은 이 방법으로 덮지 않는다 — 관리 콘솔에서 수동으로 반영한다(맨 아래 체크리스트).
 
+바뀐 것이 portal 클라이언트 설정(`redirectUris` / `webOrigins` / `attributes`)뿐이라면
+realm 전체를 다시 임포트할 이유가 없다. 계정을 보존한 채 그 클라이언트만 맞추는 쪽을 쓴다.
+
+```bash
+pnpm realm:render        # .env → docker/keycloak/realm-mega.json
+pnpm realm:sync-client   # live Keycloak의 portal 클라이언트만 Admin API로 갱신
+```
+
+`APP_BASE_URL`을 바꾼 뒤 이걸 빼먹으면 로그인이 `Invalid parameter: redirect_uri` 로 깨진다.
+
 ### 포트 바꾸기
 
 `.env`의 `APP_BASE_URL` **하나만** 고치고 realm을 다시 렌더링하면 된다.
@@ -71,7 +81,7 @@ realm을 지우고 다시 만드는 것이므로 **콘솔이나 포털에서 만
 ```bash
 sed -i '' 's|30400|3400|' .env
 pnpm realm:render                                    # redirect_uri 등 재생성
-docker compose -f docker/compose.yml up -d --force-recreate keycloak
+pnpm realm:sync-client                               # 실행 중인 Keycloak에 반영 (계정 보존)
 pnpm dev
 ```
 
@@ -88,6 +98,54 @@ Keycloak 설정을 안 고쳐서 로그인이 깨지는 사고가 구조적으�
 | PostgreSQL | 5433 → 컨테이너 5432 | 호스트 5432는 로컬 PostgreSQL이 사용 중 |
 
 이 기본값은 로컬에 이미 3000·3100(다른 프로젝트)과 5432(로컬 PostgreSQL)가 떠 있어 그것을 피한 것이다.
+
+## pm2로 상시 구동
+
+`ecosystem.config.cjs`가 설정 파일이다. `pnpm dev`(tsx watch)는 개발용이고, 상시 구동은
+빌드 결과물(`dist/server.js`)을 pm2가 띄운다.
+
+```bash
+pnpm install
+pnpm build                 # dist/ 생성. 이걸 빼먹으면 pm2가 옛 코드를 띄운다
+pm2 start ecosystem.config.cjs
+pm2 logs mega-sso-portal
+```
+
+`pnpm pm2:start` / `pm2:reload` 는 build 를 먼저 돌리는 단축 명령이다.
+
+| 명령 | 하는 일 |
+| --- | --- |
+| `pnpm pm2:start` | build → pm2 start |
+| `pnpm pm2:reload` | build → 재시작 (SIGINT → `app.close()` → `closeDb()`). **무중단이 아니다** — fork 모드에서 pm2는 hardReload 대신 restart로 떨어져 종료~기동 사이 몇 초간 포트가 닫힌다 |
+| `pnpm pm2:stop` | 중지 |
+| `pnpm pm2:logs` | 로그 tail |
+| `pm2 delete mega-sso-portal` | 목록에서 제거 |
+
+로그는 `logs/out.log`, `logs/error.log`에 쌓인다(gitignore). `NODE_ENV=production`이므로
+pino가 JSON 한 줄씩 쓴다 — pino-pretty는 devDependency라 운영에서 쓰지 않는다.
+
+### 전제 조건
+
+- **Keycloak과 PostgreSQL이 먼저 떠 있어야 한다.** pm2는 이걸 관리하지 않는다 (`pnpm infra:up`).
+- **`.env`가 프로젝트 루트에 있어야 한다.** `load-env.ts`가 cwd 기준 상대경로로 읽으므로
+  설정의 `cwd: __dirname` 이 필수다. 환경변수 검증에 실패하면 프로세스가 즉시 `exit(1)` 한다.
+- **`dist/`와 함께 `src/`도 있어야 한다.** `.eta` 템플릿은 tsc가 컴파일하지 않아 런타임에
+  `dist/../src` 에서 원본을 읽는다. 배포 시 `src/`를 빼면 모든 화면이 500이 된다.
+- **`package.json`이 `"type": "module"`** 이라 pm2 설정 파일은 `.cjs` 여야 한다. `.js`로 두면
+  pm2가 require 하다 실패한다.
+
+### fork 1개인 이유
+
+`exec_mode: 'fork'`, `instances: 1` 로 고정했다. cluster로 늘리면 인스턴스마다 세션 정리
+타이머(1시간 주기)가 따로 돌고, ESM + pm2 cluster 조합도 안정적이지 않다. 수평 확장이
+필요해지면 그때 검토한다.
+
+### 부팅 시 자동 기동
+
+```bash
+pm2 startup          # 출력되는 sudo 명령을 그대로 실행한다
+pm2 save             # 현재 프로세스 목록을 저장
+```
 
 ## 검증
 
@@ -115,6 +173,8 @@ src/
     apps/            앱 카탈로그와 노출 정책 (/admin/apps). apps·app_roles 테이블 소유
     users/           사용자 관리 (/admin/users). Keycloak Admin REST API (service account)
     hr/              A10 사원 정보 미러와 동기화 (/admin/hr). hr_employee 테이블 소유
+    sso/             포털을 하위 앱의 OIDC Provider로 노출 (/oidc/*, /admin/sso-clients).
+                     sso_clients·sso_auth_codes·sso_signing_keys·sso_sessions 테이블 소유
 public/            app.css, htmx.min.js
 scripts/
   render-realm.mjs .env → Keycloak realm import 파일 생성
@@ -128,7 +188,7 @@ docker/
 도메인 규칙:
 
 - **도메인 간 참조는 상대 도메인의 `index.ts`를 통해서만** 한다. 내부 파일 직접 import 금지.
-  의존 방향은 `portal → apps → auth`, `users → hr`, `users → auth` 한 방향이다.
+  의존 방향은 `portal → apps → auth`, `users → hr`, `users → auth`, `sso → auth` 한 방향이다.
   auth는 어떤 도메인에도 의존하지 않고, hr은 어떤 도메인도 참조하지 않는다.
 - 도메인별 상세 규칙(안전장치 포함)은 각 폴더의 `CLAUDE.md`에 있다. AI 에이전트는 해당 도메인
   폴더만 읽고 작업할 수 있다.
@@ -184,10 +244,12 @@ id / access / userinfo token 의 employee_code claim
   `service-account-portal`이나 `admin.portal` 같은 사람이 아닌 계정이 이미 있고, 사번을 강제하면
   A10 동기화가 실패한 상태에서 새 관리자 계정을 아무도 못 만드는 자충수가 된다. 이 계정에는
   `employee_code` claim이 실리지 않으므로 다른 솔루션은 claim 부재를 "직원 아님"으로 읽으면 된다.
-- **사번 중복은 등록 직전 Keycloak 조회로 막는다**(`GET /users?q=employeeCode:12345`).
-  Keycloak 자체에는 attribute 유니크 제약이 없다(중복 생성 201 실측). 경쟁 상태가 이론적으로
-  남지만 `/admin/users`는 `portal-admin`만 쓰는 저빈도 화면이고, 이를 막자고 포털 DB에 매핑
-  테이블을 두면 이중 원본이라는 더 큰 문제를 산다. 대신 목록에 사번 열을 노출해 발견 가능하게 했다.
+- **사번 중복은 등록 직전 조회 + 저장 직후 되읽기, 두 번으로 막는다**
+  (`GET /users?q=employeeCode:12345`). Keycloak 자체에는 attribute 유니크 제약이 없다
+  (중복 생성 201 실측). 조회와 생성 사이에는 잠금이 없어 두 관리자가 거의 동시에 같은 사번을
+  등록하면 둘 다 사전 조회를 통과하므로, 저장한 뒤 같은 사번의 **다른** 계정이 잡히면 늦게
+  도착한 쪽이 방금 만든 계정을 지우고 실패한다(사번 연결 경로는 붙인 사번을 다시 뗀다).
+  이를 막자고 포털 DB에 매핑 테이블을 두면 이중 원본이라는 더 큰 문제를 산다.
 - **퇴직자(J05)는 신규 등록만 막는다.** 동기화가 기존 계정을 자동 비활성화하지는 않는다 —
   A10 응답이 일부만 내려오는 사고 한 번에 대량 잠금이 일어나고, 세션까지 끊기면 되돌리기 어렵다.
   목록·상세에 `퇴직` 태그를 띄우고 처리는 관리자의 기존 "비활성화" 액션에 맡긴다.
@@ -217,6 +279,61 @@ id / access / userinfo token 의 employee_code claim
 남의 업무 앱에 자동 접근권을 주지 않는다.
 
 역할 **생성**은 아직 포털에 없다. 새 역할이 필요하면 Keycloak 콘솔의 Realm roles에서 만든다.
+
+## 하위 앱을 포털에 연동하기 (포털이 OP)
+
+운영에서 최종 사용자는 Keycloak에 직접 접속하지 않는다. 하위 사내 앱은 Keycloak이 아니라
+**포털**을 OIDC Provider로 바라본다. 포털은 Keycloak의 RP이면서 동시에 하위 앱들의 OP다.
+
+```
+[하위 Node 앱] --openid-client--> [포털 /oidc/*] --openid-client--> [Keycloak]
+```
+
+**하위 Node 앱(Express / Fastify / API 서버)을 붙이는 전체 절차와 복사해 쓸 수 있는 코드는
+[docs/SSO-CONNECT.md](docs/SSO-CONNECT.md) 에 있다.** 아래는 요약이다.
+
+1. `/admin/sso-clients` 에서 앱을 등록한다. 평문 client secret은 **등록·재발급 응답 화면에만
+   한 번** 나온다(DB에는 scrypt 해시만 있다). 그 자리에서 복사해 하위 앱의 `.env`에 넣는다.
+2. 상세 화면의 "연동 정보" 표에 하위 앱 개발자에게 그대로 전달할 값이 있다.
+
+| 값 | 예 |
+| --- | --- |
+| issuer | `http://localhost:30400/oidc` |
+| discovery | `http://localhost:30400/oidc/.well-known/openid-configuration` |
+| grant | `authorization_code` + PKCE `S256` (**필수**) |
+
+하위 앱 쪽 코드는 이렇게 된다.
+
+```js
+// 끝에 슬래시를 붙이지 마라. `.../oidc/` 를 넘기면 openid-client가 issuer 문자열 비교에서 실패한다.
+const config = await client.discovery(
+  new URL(`${PORTAL}/oidc`),
+  CLIENT_ID,
+  CLIENT_SECRET,
+  undefined,
+  // openid-client 6은 기본적으로 https만 허용한다. 위 예처럼 포털이 개발용 http면
+  // 이 분기가 없으면 `ClientError: only requests to HTTPS are allowed` 로 죽는다.
+  // 운영(https)에서는 undefined가 되어 켜지지 않는다 — docs/SSO-CONNECT.md §3 참고.
+  PORTAL.startsWith('http://') ? { execute: [client.allowInsecureRequests] } : undefined,
+)
+```
+
+주의할 것:
+
+- `redirect_uri` / `post_logout_redirect_uri` 는 **완전 문자열 일치**로만 검증한다. 와일드카드 없다.
+- 등록 화면은 loopback(`localhost` / `127.0.0.1` / `[::1]`)을 뺀 모든 URI에 **https**를 요구한다.
+  인가 코드가 쿼리스트링으로 오가므로 사내망이라도 평문 http면 가로챌 수 있다. 사내 앱을 http로
+  서비스해야 한다면 그건 정책 결정이다 — `src/domains/sso/validate.ts` 한 곳을 고쳐야 한다.
+- **refresh token을 발급하지 않는다.** access token 수명은 5분이고 `grant_types_supported` 에
+  `authorization_code` 하나만 광고한다. 하위 앱은 자체 세션을 두고 만료되면 다시 인가를 받는다.
+- back-channel logout URL을 등록해 두면 포털 세션이 끝날 때(하위 앱발 로그아웃, 포털 로그아웃,
+  Keycloak 강제 로그아웃, 세션 만료) 그 앱에 `logout_token`이 POST된다. 등록하지 않은 앱은
+  자체 세션 만료를 따른다.
+- 서명키(RS256)는 포털 DB(`sso_signing_keys`)가 원본이다. 첫 기동 때 한 쌍을 만들고 그 뒤로는
+  재기동해도 `kid`가 유지된다 — 하위 앱의 JWKS 캐시가 깨지지 않는다.
+
+claim 레퍼런스, 역할 기반 접근 제어, back-channel logout 수신 코드, 오류별 원인 표는
+[docs/SSO-CONNECT.md](docs/SSO-CONNECT.md) 를 본다.
 
 ## 설계 결정
 
