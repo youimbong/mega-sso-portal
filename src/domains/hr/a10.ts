@@ -53,10 +53,10 @@ type A10Credentials = {
 }
 
 /**
- * A10_* 환경변수를 모아 확인한다. env 스키마에서 전부 optional이므로(자격증명 없이도 포털은
- * 뜬다) 실제로 호출하는 이 지점에서 fail-fast 한다.
+ * 비어 있는 A10_* 환경변수 이름 목록. 값은 담지 않는다 — 화면과 로그에 자격증명이 새면 안 된다.
+ * 동기화 이전에 화면이 "A10 설정이 없다"고 안내하는 데도 쓴다.
  */
-function requireCredentials(): A10Credentials {
+export function missingA10Config(): string[] {
   const missing: string[] = []
   if (!env.A10_API_BASE_URL) missing.push('A10_API_BASE_URL')
   if (!env.A10_ACCESS_TOKEN) missing.push('A10_ACCESS_TOKEN')
@@ -64,6 +64,15 @@ function requireCredentials(): A10Credentials {
   if (!env.A10_CALLER_NAME) missing.push('A10_CALLER_NAME')
   if (!env.A10_GROUP_SEQ) missing.push('A10_GROUP_SEQ')
   if (!env.A10_CO_CD) missing.push('A10_CO_CD')
+  return missing
+}
+
+/**
+ * A10_* 환경변수를 모아 확인한다. env 스키마에서 전부 optional이므로(자격증명 없이도 포털은
+ * 뜬다) 실제로 호출하는 이 지점에서 fail-fast 한다.
+ */
+function requireCredentials(): A10Credentials {
+  const missing = missingA10Config()
 
   if (missing.length > 0) {
     throw new Error(`A10 자격증명이 없다: ${missing.join(', ')}`)

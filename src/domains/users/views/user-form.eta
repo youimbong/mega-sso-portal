@@ -30,7 +30,7 @@
     />
   </div>
 
-  <%~ include("./employee-picker", { q: '', employees: [] }) %>
+  <%~ include("./employee-picker", { q: '', employees: [], searchable: false, a10Missing: [] }) %>
 
   <p class="muted">
     <a
@@ -120,6 +120,29 @@
       </span>
       <small>끄면 지정한 비밀번호를 그대로 쓴다.</small>
     </label>
+
+    <%/* 역할을 여기서 같이 주지 않으면 등록 후 상세 화면을 한 번 더 들러야 한다. */%>
+    <div class="span2">
+      <span>역할</span>
+      <ul class="rolelist">
+        <% it.roles.forEach(function (role) { %>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              name="roles"
+              value="<%= role.name %>"
+              <%/* 체크박스가 하나면 문자열로 온다. 배열로 맞춰야 부분일치로 오판하지 않는다. */%>
+              <%= [].concat(it.values.roles || []).includes(role.name) ? 'checked' : '' %>
+            />
+            <code><%= role.name %></code>
+            <% if (role.description) { %><span class="muted"><%= role.description %></span><% } %>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+      <small class="muted">체크하지 않아도 realm 기본 역할은 그대로 붙는다.</small>
+    </div>
 
     <div class="span2">
       <button class="btn primary" type="submit">등록</button>

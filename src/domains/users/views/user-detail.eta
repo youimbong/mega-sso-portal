@@ -38,8 +38,139 @@
     <% } else if (it.notice === 'password-reset') { %>비밀번호를 재설정했다.
     <% } else if (it.notice === 'toggled') { %>계정 상태를 변경했다.
     <% } else if (it.notice === 'logged-out') { %>모든 세션을 끊었다.
+    <% } else if (it.notice === 'profile-saved') { %>계정 정보를 저장했다. 대상자가 다시 로그인해야 claim에 반영된다.
+    <% } else if (it.notice === 'mirror-synced') { %>미러(A10) 값을 계정에 반영했다.
+    <% } else if (it.notice === 'employee-linked') { %>사번을 연결했다. 성명·이메일도 맞추려면 "미러에서 다시 가져오기"를 눌러라.
+    <% } else if (it.notice === 'employee-unlinked') { %>사번 연결을 해제했다. 이제 <code>employee_code</code> claim이 실리지 않는다.
     <% } else { %>처리했다.<% } %>
   </p>
+  <% } %>
+
+  <%/* --- 계정 정보 --- */%>
+  <section class="panel">
+    <h2>계정 정보</h2>
+    <% if (it.federated) { %>
+    <p class="muted">외부 저장소(AD/LDAP)가 소유한 계정이다. 성명·이메일은 그쪽에서 고쳐야 한다.</p>
+
+    <% } else if (it.employeeCode) { %>
+    <%/*
+      직원 연동 계정의 성명·이메일은 A10이 원본이다. 수기 입력을 열어두면 미러와 계정이
+      말없이 갈라진다 — 고치는 경로는 "미러에서 다시 가져오기" 하나로 둔다.
+    */%>
+    <p class="muted">
+      직원 연동 계정이다. 성명·이메일은 A10이 원본이라 여기서 수기로 고치지 않는다.
+      값이 틀렸으면 A10에서 고치고 <a href="/admin/hr">직원 동기화</a>를 돌린 뒤 아래 버튼을 눌러라.
+    </p>
+
+    <table class="tbl">
+      <tbody>
+        <tr>
+          <th>성명</th>
+          <td>
+            <%= it.target.firstName || '—' %>
+            <% if (it.employee) { %><span class="muted">미러: <%= it.employee.koreanName %></span><% } %>
+          </td>
+        </tr>
+        <tr>
+          <th>이메일</th>
+          <td>
+            <%= it.target.email || '—' %>
+            <% if (it.mirrorEmail.email) { %><span class="muted">미러: <%= it.mirrorEmail.email %></span><% } %>
+            <% if (it.mirrorEmail.rejected) { %>
+            <span class="tag off">A10 급여이메일 "<%= it.mirrorEmail.rejected %>"이 이메일 형식이 아니라 쓰지 않았다</span>
+            <% } %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <% if (it.mismatches.length) { %>
+    <p class="notice">
+      미러와 다른 값이 있다:
+      <% it.mismatches.forEach(function (m) { %>
+      <code><%= m.field %></code> 계정 "<%= m.account || '없음' %>" ↔ 미러 "<%= m.mirror %>"
+      <% }) %>
+    </p>
+    <% } %>
+
+    <form method="post" action="/admin/users/<%= encodeURIComponent(it.target.id) %>/employee/sync">
+      <button class="btn" type="submit">미러에서 다시 가져오기</button>
+    </form>
+
+    <% } else { %>
+    <%/* 직원 연결이 없는 별건 계정만 수기 입력을 연다. */%>
+    <form
+      method="post"
+      action="/admin/users/<%= encodeURIComponent(it.target.id) %>"
+      class="form-grid"
+    >
+      <label>
+        이메일
+        <input name="email" type="email" value="<%= it.target.email || '' %>" />
+        <small>비우면 이메일을 지운다.</small>
+      </label>
+      <label>
+        성
+        <input name="lastName" value="<%= it.target.lastName || '' %>" />
+      </label>
+      <label>
+        이름
+        <input name="firstName" value="<%= it.target.firstName || '' %>" />
+      </label>
+      <div class="span2">
+        <button class="btn primary" type="submit">정보 저장</button>
+      </div>
+    </form>
+    <% } %>
+  </section>
+
+  <%/* --- 사번 연결 --- */%>
+  <% if (!it.federated) { %>
+  <section class="panel">
+    <h2>사번 연결</h2>
+    <% if (!it.employeeCode) { %>
+    <p class="muted">
+      사번을 붙이면 <code>employee_code</code> claim이 실린다. 등록 화면과 같은 검증을 거친다 —
+      미러에 있어야 하고, 퇴직자가 아니어야 하고, 다른 계정이 쓰고 있지 않아야 한다.
+    </p>
+    <form
+      method="post"
+      action="/admin/users/<%= encodeURIComponent(it.target.id) %>/employee"
+      class="form-grid"
+    >
+      <label>
+        사번
+        <input name="employeeCode" required maxlength="10" placeholder="2007031101" />
+      </label>
+      <div class="span2">
+        <button class="btn primary" type="submit">사번 연결</button>
+      </div>
+    </form>
+
+    <% } else { %>
+    <p class="muted">
+      사번 <code><%= it.employeeCode %></code>
+      <% if (it.retired) { %><span class="tag off">퇴직</span><% } %>
+      <% if (!it.employee) { %><span class="tag off">미러에 없음</span><% } %>
+    </p>
+    <form
+      method="post"
+      action="/admin/users/<%= encodeURIComponent(it.target.id) %>/employee/unlink"
+      class="form-grid"
+    >
+      <label class="checkbox">
+        <span>
+          <%/* 해제를 되돌리려면 사번을 다시 찾아 넣어야 한다. 체크 한 번을 더 받는다. */%>
+          <input type="checkbox" name="confirm" value="unlink" required />
+          연결을 해제한다. 이 계정은 더 이상 직원 계정이 아니게 된다.
+        </span>
+      </label>
+      <div class="span2">
+        <button class="btn danger" type="submit">사번 연결 해제</button>
+      </div>
+    </form>
+    <% } %>
+  </section>
   <% } %>
 
   <%/* --- 역할 --- */%>
@@ -52,15 +183,22 @@
     <form method="post" action="/admin/users/<%= encodeURIComponent(it.target.id) %>/roles">
       <ul class="rolelist">
         <% it.assignable.forEach(function (role) { %>
+        <%/*
+          realm 기본 역할(default-roles-mega) 컴포지트로 딸려온 역할은 이 폼으로 회수할 수 없다.
+          체크 해제할 수 있게 두면 "저장했다"고 말해놓고 실제로는 그대로 남는다.
+        */%>
+        <% var inherited = it.inherited.includes(role.name) %>
         <li>
           <label>
             <input
               type="checkbox"
               name="roles"
               value="<%= role.name %>"
-              <%= it.assigned.includes(role.name) ? 'checked' : '' %>
+              <%= it.assigned.includes(role.name) || inherited ? 'checked' : '' %>
+              <%= inherited ? 'disabled' : '' %>
             />
             <code><%= role.name %></code>
+            <% if (inherited) { %><span class="tag">기본 역할로 부여됨 · 여기서 회수 불가</span><% } %>
             <% if (role.description) { %><span class="muted"><%= role.description %></span><% } %>
           </label>
         </li>

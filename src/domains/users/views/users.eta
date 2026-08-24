@@ -5,9 +5,11 @@
     Keycloak의 계정을 여기서 관리한다. 관리 콘솔에 들어갈 필요 없다.
   </p>
 
+  <p class="muted"><a href="/admin/users/checkup">계정 점검 — 퇴직자·미러와 어긋난 계정 찾기</a></p>
+
   <%~ include("./user-form", {
     errors: it.errors, values: it.values,
-    employee: it.employee, standalone: it.standalone
+    employee: it.employee, standalone: it.standalone, roles: it.roles
   }) %>
 
   <div class="searchbar">

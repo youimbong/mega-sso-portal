@@ -12,13 +12,15 @@ A10 사원등록조회(api16S05)를 받아 담는 읽기 전용 미러와 그 �
 | `a10.ts` | A10 인증 헤더 6종 + `/apiproxy/api16S05` POST + envelope 언랩 + 페이지 순회 |
 | `a10-sign.ts` | wehago-sign HMAC·페이징 계산 (순수 함수, 테스트 있음) |
 | `map-employee.ts` | A10 레코드 → 미러 행 변환 (순수 함수, 테스트 있음) |
+| `search-terms.ts` | 직원 검색어 하한 판정 (순수 함수, 테스트 있음) |
 | `schema.ts` | **소유 테이블: `hr_employee`** |
 
 ## 공개 API (`index.ts`)
 
-`hrRoutes`, `syncEmployees`, `searchEmployees`, `getEmployeeByCode`, `getLastSyncedAt`,
-`isRetired`, `Employee`, `SyncResult`.
-users 도메인이 직원 선택에 `searchEmployees`/`getEmployeeByCode`를 쓴다.
+`hrRoutes`, `syncEmployees`, `searchEmployees`, `getEmployeeByCode`, `getEmployeesByCodes`,
+`getLastSyncedAt`, `isRetired`, `isSearchableTerm`, `missingA10Config`, `Employee`, `SyncResult`.
+users 도메인이 직원 선택에 `searchEmployees`/`getEmployeeByCode`를, 계정 점검에
+`getEmployeesByCodes`를 쓴다.
 다른 도메인은 index.ts만 import한다. 내부 파일(`a10.ts` 등) 직접 import 금지.
 
 ## 불변 규칙
@@ -32,7 +34,10 @@ users 도메인이 직원 선택에 `searchEmployees`/`getEmployeeByCode`를 쓴
 - 사번(`code`)이 upsert 키다. `empCd`가 빈 행은 건너뛴다(`SyncResult.skipped`).
 - 재직구분이 비면 재직(`J01`)으로 본다. EIS와 같은 낙관적 기본값이다.
 - A10_* 자격증명은 전부 optional이다 — 없어도 포털은 뜨고, `syncEmployees`를 부르는 순간
-  누락된 키 이름을 실어 즉시 실패한다.
+  누락된 키 이름을 실어 즉시 실패한다. 화면은 `missingA10Config()`로 그 전에 미리 안내하고
+  동기화 버튼만 막는다(미러 조회와 별건 계정 등록은 그대로 된다).
+- 검색어 하한은 `isSearchableTerm`이 정한다 — 한글은 1자, 영문·숫자는 2자다. 한글 한 글자가
+  라틴 두 글자만큼 후보를 좁히고, 성 한 글자로 찾는 빈도가 높다.
 - 동기화는 관리자 수동 실행만이다. 스케줄러는 만들지 않는다.
 
 ## 의존

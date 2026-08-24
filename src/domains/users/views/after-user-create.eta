@@ -1,5 +1,7 @@
 <%/* 등록 성공: 폼을 비우고, 목록은 out-of-band로 함께 갱신한다. */%>
-<%~ include("./user-form", { errors: [], values: {}, employee: null, standalone: false }) %>
+<%~ include("./user-form", {
+  errors: it.errors, values: {}, employee: null, standalone: false, roles: it.roles
+}) %>
 <%~ include("./user-table", {
   users: it.users, total: it.total, page: it.page,
   pageCount: it.pageCount, q: it.q, oob: true

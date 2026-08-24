@@ -12,6 +12,14 @@
   </ul>
   <% } %>
 
+  <% if (it.a10Missing && it.a10Missing.length) { %>
+  <%/* 자격증명이 없어도 미러 조회·별건 계정 등록은 된다. 막히는 것은 동기화뿐이다. */%>
+  <p class="notice">
+    A10 설정이 없다. <code><%= it.a10Missing.join(', ') %></code>를 <code>.env</code>에 채워야 동기화할 수 있다.
+    그때까지 미러는 마지막으로 받은 상태 그대로이고, 직원 연결 없는 별건 계정은 그대로 만들 수 있다.
+  </p>
+  <% } %>
+
   <% if (it.notice === 'synced') { %>
   <p class="notice">
     동기화했다. A10에서 <%= it.fetched %>건을 받아 <%= it.upserted %>건을 미러에 반영했다.
@@ -46,7 +54,9 @@
     <div class="btnrow">
       <%/* 전건 조회라 수십 초가 걸릴 수 있다. htmx 조각이 아니라 일반 폼 POST로 보낸다. */%>
       <form method="post" action="/admin/hr/sync">
-        <button class="btn primary" type="submit">지금 동기화</button>
+        <button class="btn primary" type="submit" <%= it.a10Missing && it.a10Missing.length ? 'disabled' : '' %>>
+          지금 동기화
+        </button>
       </form>
     </div>
   </section>

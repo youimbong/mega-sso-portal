@@ -1,9 +1,12 @@
-import { and, asc, count, eq, ilike, max, ne, or, sql } from 'drizzle-orm'
+import { and, asc, count, eq, ilike, inArray, max, ne, or, sql } from 'drizzle-orm'
 
 import { db } from '../../shared/db.js'
-import { fetchAllEmployees } from './a10.js'
+import { fetchAllEmployees, missingA10Config } from './a10.js'
 import { mapEmployee } from './map-employee.js'
 import { hrEmployee } from './schema.js'
+import { isSearchableTerm } from './search-terms.js'
+
+export { missingA10Config }
 
 /** hr_employee 한 행. drizzle $inferSelect 그대로다. */
 export type Employee = typeof hrEmployee.$inferSelect
@@ -33,13 +36,13 @@ const SEARCH_LIMIT = 20
 
 /**
  * 사번·성명 부분일치 검색. 관리자 화면의 직원 선택 목록에 쓴다.
- * - q가 비었거나 2자 미만이면 빈 배열을 돌려준다(전건 로딩 방지).
+ * - 검색어가 너무 짧으면(isSearchableTerm) 빈 배열을 돌려준다(전건 로딩 방지).
  * - 퇴직자(J05)는 신규 발급 대상이 아니라 항상 제외한다.
  * - 검색어의 LIKE 와일드카드(%, _)는 이스케이프한다. 그냥 두면 '%'만 쳐도 전건이 걸린다.
  */
 export async function searchEmployees(options: { q: string }): Promise<Employee[]> {
   const q = options.q.trim()
-  if (q.length < 2) return []
+  if (!isSearchableTerm(q)) return []
 
   const pattern = `%${q.replace(/[\\%_]/g, '\\$&')}%`
   const match = or(ilike(hrEmployee.code, pattern), ilike(hrEmployee.koreanName, pattern))
@@ -56,6 +59,15 @@ export async function searchEmployees(options: { q: string }): Promise<Employee[
 export async function getEmployeeByCode(code: string): Promise<Employee | null> {
   const [row] = await db.select().from(hrEmployee).where(eq(hrEmployee.code, code)).limit(1)
   return row ?? null
+}
+
+/**
+ * 사번 여러 개를 한 번에 읽는다. 계정 점검 화면이 목록의 사번을 미러와 대조할 때 쓴다.
+ * 사번 하나마다 질의하면 계정 수만큼 왕복이 생긴다.
+ */
+export async function getEmployeesByCodes(codes: string[]): Promise<Employee[]> {
+  if (codes.length === 0) return []
+  return db.select().from(hrEmployee).where(inArray(hrEmployee.code, codes))
 }
 
 /** 미러의 가장 최근 synced_at. 한 번도 동기화한 적 없으면 null. */

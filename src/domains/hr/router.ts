@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 
 import { requireAdmin } from '../auth/index.js'
-import { getEmployeeCounts, getLastSyncedAt, syncEmployees } from './service.js'
+import { getEmployeeCounts, getLastSyncedAt, missingA10Config, syncEmployees } from './service.js'
 
 /**
  * 직원 미러 동기화 화면. 관리자가 버튼으로 직접 돌린다 — 스케줄러는 만들지 않는다.
@@ -19,6 +19,8 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
       title: '직원 동기화',
       counts,
       lastSyncedAt,
+      // 자격증명이 없어도 화면은 떠야 한다. 동기화 버튼만 막고 무엇이 비었는지 알린다.
+      a10Missing: missingA10Config(),
       notice: typeof query.notice === 'string' ? query.notice : null,
       fetched: typeof query.fetched === 'string' ? query.fetched : null,
       upserted: typeof query.upserted === 'string' ? query.upserted : null,
@@ -43,6 +45,7 @@ export async function hrRoutes(app: FastifyInstance): Promise<void> {
         title: '직원 동기화',
         counts,
         lastSyncedAt,
+        a10Missing: missingA10Config(),
         notice: null,
         fetched: null,
         upserted: null,

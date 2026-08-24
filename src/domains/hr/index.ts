@@ -5,9 +5,12 @@
 export { hrRoutes } from './router.js'
 export {
   getEmployeeByCode,
+  getEmployeesByCodes,
   getLastSyncedAt,
   isRetired,
+  missingA10Config,
   searchEmployees,
   syncEmployees,
 } from './service.js'
+export { isSearchableTerm } from './search-terms.js'
 export type { Employee, SyncResult } from './service.js'

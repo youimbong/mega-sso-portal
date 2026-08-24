@@ -23,7 +23,15 @@
     <tr class="<%= u.enabled ? '' : 'off' %>">
       <td><code><%= u.username %></code></td>
       <%/* 사번이 없는 계정(시스템 계정)은 —. 중복 사번을 눈으로 찾을 수 있게 열로 노출한다. */%>
-      <td><% if (u.employeeCode) { %><code><%= u.employeeCode %></code><% } else { %>—<% } %></td>
+      <td>
+        <% if (u.employeeCode) { %>
+        <code><%= u.employeeCode %></code>
+        <%/* 퇴직·미러 없음·미러와 다름은 관리자가 판단할 일이라 표시만 한다(자동 잠금 없음). */%>
+        <% if (u.retired) { %><span class="tag off">퇴직</span><% } %>
+        <% if (u.missingMirror) { %><span class="tag off">미러 없음</span><% } %>
+        <% if (u.mismatches && u.mismatches.length) { %><span class="tag">미러와 다름</span><% } %>
+        <% } else { %>—<% } %>
+      </td>
       <td><%= [u.lastName, u.firstName].filter(Boolean).join(' ') || '—' %></td>
       <td class="url"><%= u.email || '—' %></td>
       <td>

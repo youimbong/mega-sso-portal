@@ -1,0 +1,71 @@
+<% layout("../../../shared/views/layout") %>
+<main class="wrap">
+  <p class="crumb"><a href="/admin/users">← 사용자 목록</a></p>
+
+  <h1>계정 점검</h1>
+  <p class="muted">
+    사번이 붙은 계정을 A10 미러와 대조한다. 퇴직(J05)·미러에 없음·성명/이메일 어긋남만 남긴다.
+    <b>여기서 계정을 자동으로 잠그거나 덮어쓰지 않는다</b> — 관리자가 상세 화면에서 판단한다.
+  </p>
+
+  <% if (it.a10Missing && it.a10Missing.length) { %>
+  <p class="notice">
+    A10 설정이 없어(<code><%= it.a10Missing.join(', ') %></code>) 미러를 갱신할 수 없다.
+    아래 결과는 마지막으로 받아둔 미러 기준이다.
+  </p>
+  <% } %>
+
+  <% if (it.truncated) { %>
+  <p class="notice">
+    계정이 많아 앞의 <%= it.scanned %>건만 훑었다. 나머지는 이 화면에 나오지 않는다.
+  </p>
+  <% } %>
+
+  <section class="panel">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>사번</th>
+          <th>문제</th>
+          <th>상태</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (it.rows.length === 0) { %>
+        <tr>
+          <td colspan="5" class="muted center">
+            사번이 붙은 계정 <%= it.scanned %>건을 훑었고 어긋난 곳이 없다.
+          </td>
+        </tr>
+        <% } %>
+
+        <% it.rows.forEach(function (row) { %>
+        <tr class="<%= row.enabled ? '' : 'off' %>">
+          <td><code><%= row.username %></code></td>
+          <td><code><%= row.employeeCode %></code></td>
+          <td>
+            <% if (row.retired) { %>
+            <span class="tag off">퇴직</span>
+            <%= row.employee.koreanName %>
+            <% if (row.employee.resignationDate) { %>· 퇴사일 <%= row.employee.resignationDate %><% } %>
+            <% } %>
+            <% if (row.missingMirror) { %>
+            <span class="tag off">미러에 없음</span> A10에서 사라졌거나 아직 동기화하지 않았다.
+            <% } %>
+            <% row.mismatches.forEach(function (m) { %>
+            <span class="tag">미러와 다름</span>
+            <code><%= m.field %></code> 계정 "<%= m.account || '없음' %>" ↔ 미러 "<%= m.mirror %>"
+            <% }) %>
+          </td>
+          <td><%= row.enabled ? '사용' : '중지' %></td>
+          <td class="actions">
+            <a class="btn sm" href="/admin/users/<%= encodeURIComponent(row.id) %>">관리</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</main>
