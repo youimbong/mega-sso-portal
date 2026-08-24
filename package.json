@@ -19,7 +19,12 @@
     "infra:up": "node scripts/render-realm.mjs && docker compose -f docker/compose.yml up -d",
     "infra:down": "docker compose -f docker/compose.yml down",
     "infra:logs": "docker compose -f docker/compose.yml logs -f",
-    "realm:render": "node scripts/render-realm.mjs"
+    "realm:render": "node scripts/render-realm.mjs",
+    "realm:sync-client": "node scripts/sync-realm-client.mjs",
+    "pm2:start": "pnpm build && pm2 start ecosystem.config.cjs",
+    "pm2:reload": "pnpm build && pm2 reload ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop mega-sso-portal",
+    "pm2:logs": "pm2 logs mega-sso-portal"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",

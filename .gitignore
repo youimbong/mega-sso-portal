@@ -22,3 +22,5 @@ next-env.d.ts
 
 # render-realm.mjs가 템플릿에서 생성한다
 docker/keycloak/realm-mega.json
+
+logs/
